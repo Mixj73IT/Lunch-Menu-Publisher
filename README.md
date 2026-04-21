@@ -1,6 +1,6 @@
 # Lunch Menu Publisher
 
-A desktop application for Christian schools to create and manage monthly lunch menus with Bible verse displays, landscape calendar layout, NO SCHOOL day management, and email export functionality.
+A desktop application for schools to create and manage monthly lunch menus with verse displays, landscape calendar layout, NO SCHOOL day management, and email export functionality.
 
 ## Features
 
@@ -168,7 +168,7 @@ Application state is managed in `js/state.js` and persisted to localStorage:
 
 ## License
 
-This project is proprietary software for Christian schools.
+This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## Support
 

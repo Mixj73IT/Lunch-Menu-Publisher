@@ -22,7 +22,7 @@
       "externalBin": [],
       "icon": ["icons/icon.ico"],
       "identifier": "com.school.lunchmenu",
-      "longDescription": "A professional lunch menu publisher for Christian schools",
+      "longDescription": "A professional lunch menu publisher for schools",
       "macOS": {
         "entitlements": null,
         "exceptionDomain": "",
