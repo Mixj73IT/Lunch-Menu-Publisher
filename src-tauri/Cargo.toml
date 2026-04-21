@@ -1,0 +1,20 @@
+[package]
+name = "lunch-menu-publisher"
+version = "1.0.0"
+description = "Monthly Lunch Menu Publisher"
+authors = ["Christian School"]
+license = ""
+repository = ""
+edition = "2021"
+
+[build-dependencies]
+tauri-build = { version = "1.5.0", features = [] }
+
+[dependencies]
+tauri = { version = "1.5.0", features = ["shell-open"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]

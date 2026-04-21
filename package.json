@@ -1,0 +1,13 @@
+{
+  "name": "lunch-menu-publisher",
+  "version": "1.0.0",
+  "description": "Monthly Lunch Menu Publisher for Christian Schools",
+  "scripts": {
+    "tauri": "tauri",
+    "build": "tauri build",
+    "dev": "tauri dev"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^1.5.0"
+  }
+}
