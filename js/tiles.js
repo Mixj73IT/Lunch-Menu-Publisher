@@ -5,6 +5,9 @@
 const Tiles = {
     draggedTile: null,
     sourceGrid: null,
+    dragElement: null,
+    dragOffsetX: 0,
+    dragOffsetY: 0,
 
     init() {
         this.renderLibraries();
@@ -23,7 +26,7 @@ const Tiles = {
         if (!grid) return;
 
         grid.innerHTML = '';
-        
+
         tiles.forEach(tile => {
             const tileEl = this.createTileElement(tile);
             grid.appendChild(tileEl);
@@ -33,43 +36,108 @@ const Tiles = {
     createTileElement(tile) {
         const el = document.createElement('div');
         el.className = `tile ${tile.type}`;
-        el.draggable = true;
         el.dataset.tileId = tile.id;
         el.dataset.tileType = tile.type;
+        el.textContent = tile.name;
 
-        const text = document.createElement('span');
-        text.textContent = tile.name;
-        el.appendChild(text);
-
-        const removeBtn = document.createElement('button');
-        removeBtn.className = 'tile-remove';
-        removeBtn.innerHTML = '×';
-        removeBtn.title = 'Remove this tile';
-        removeBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.removeTile(tile.id, tile.type);
-        });
-        el.appendChild(removeBtn);
-
-        el.addEventListener('dragstart', (e) => this.handleDragStart(e, tile));
-        el.addEventListener('dragend', (e) => this.handleDragEnd(e));
+        // Mouse-based drag and drop for Tauri compatibility
+        el.addEventListener('mousedown', (e) => this.handleMouseDown(e, tile));
+        el.style.cursor = 'grab';
 
         return el;
     },
 
-    handleDragStart(e, tile) {
+    handleMouseDown(e, tile) {
+        if (e.button !== 0) return; // Only left click
+
         this.draggedTile = tile;
         this.sourceGrid = e.target.closest('.tile-grid').id;
+
+        // Create a clone for dragging
+        this.dragElement = e.target.cloneNode(true);
+        this.dragElement.style.position = 'fixed';
+        this.dragElement.style.pointerEvents = 'none';
+        this.dragElement.style.opacity = '0.8';
+        this.dragElement.style.zIndex = '10000';
+        this.dragElement.style.cursor = 'grabbing';
+
+        const rect = e.target.getBoundingClientRect();
+        this.dragOffsetX = e.clientX - rect.left;
+        this.dragOffsetY = e.clientY - rect.top;
+
+        this.dragElement.style.left = (e.clientX - this.dragOffsetX) + 'px';
+        this.dragElement.style.top = (e.clientY - this.dragOffsetY) + 'px';
+
+        document.body.appendChild(this.dragElement);
+
+        // Add global mouse move and mouse up listeners with bound context
+        document.addEventListener('mousemove', this.handleMouseMove.bind(this));
+        document.addEventListener('mouseup', this.handleMouseUp.bind(this));
+
         e.target.classList.add('dragging');
-        e.dataTransfer.effectAllowed = 'copy';
-        e.dataTransfer.setData('text/plain', JSON.stringify(tile));
     },
 
-    handleDragEnd(e) {
-        e.target.classList.remove('dragging');
+    handleMouseMove(e) {
+        if (!this.dragElement) return;
+
+        this.dragElement.style.left = (e.clientX - this.dragOffsetX) + 'px';
+        this.dragElement.style.top = (e.clientY - this.dragOffsetY) + 'px';
+
+        // Highlight drop targets
+        document.querySelectorAll('.day-cell').forEach(cell => {
+            const rect = cell.getBoundingClientRect();
+            if (e.clientX >= rect.left && e.clientX <= rect.right &&
+                e.clientY >= rect.top && e.clientY <= rect.bottom) {
+                if (!cell.classList.contains('no-school') && !cell.classList.contains('empty')) {
+                    cell.classList.add('drag-over');
+                }
+            } else {
+                cell.classList.remove('drag-over');
+            }
+        });
+    },
+
+    handleMouseUp(e) {
+        if (!this.dragElement) return;
+
+        // Check if dropped on a day cell
+        const cell = e.target.closest('.day-cell');
+        if (cell && !cell.classList.contains('no-school') && !cell.classList.contains('empty')) {
+            // Trigger the drop
+            const date = cell.dataset.date;
+            if (date) {
+                const dayData = State.getDay(State.currentMonth, State.currentYear, date);
+
+                if (this.draggedTile.type === 'entree') {
+                    dayData.entree = this.draggedTile.name;
+                } else if (this.draggedTile.type === 'side') {
+                    if (!dayData.sides.includes(this.draggedTile.name)) {
+                        dayData.sides.push(this.draggedTile.name);
+                    }
+                } else if (this.draggedTile.type === 'special') {
+                    dayData.specialEvent = this.draggedTile.name;
+                }
+
+                State.setDay(State.currentMonth, State.currentYear, date, dayData);
+                Calendar.renderCalendar();
+            }
+        }
+
+        // Cleanup
+        document.body.removeChild(this.dragElement);
+        this.dragElement = null;
+        this.draggedTile = null;
+
         document.querySelectorAll('.day-cell').forEach(cell => {
             cell.classList.remove('drag-over');
         });
+
+        document.querySelectorAll('.tile').forEach(tile => {
+            tile.classList.remove('dragging');
+        });
+
+        document.removeEventListener('mousemove', this.handleMouseMove.bind(this));
+        document.removeEventListener('mouseup', this.handleMouseUp.bind(this));
     },
 
     setupDragEvents() {
