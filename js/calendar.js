@@ -222,12 +222,16 @@ const Calendar = {
         if (!dayData.entree && (!dayData.sides || dayData.sides.length === 0) && !dayData.specialEvent) {
             return '';
         }
+        // Always preserve the three-part structure: entree | sides | special
         let value = dayData.entree || '';
         if (dayData.sides && dayData.sides.length > 0) {
-            value += (value ? ' | ' : '') + dayData.sides.join(', ');
+            value += ' | ' + dayData.sides.join(', ');
+        } else if (dayData.specialEvent) {
+            // Add empty sides section if there's a special event
+            value += ' | ';
         }
         if (dayData.specialEvent) {
-            value += (value ? ' | ' : '') + dayData.specialEvent;
+            value += ' | ' + dayData.specialEvent;
         }
         return value;
     },

@@ -9,6 +9,7 @@ A desktop application for schools to create and manage monthly lunch menus with 
 - **Landscape Calendar Layout**: Optimized landscape orientation for PDF printing
 - **NO SCHOOL Day Management**: Mark weekdays as NO SCHOOL with visual indicators
 - **Tile-Based Menu Items**: Drag and drop entree, side, and special event tiles
+- **Daily Milk Display**: Milk automatically displays on each school day in the calendar and PDF
 - **FACTS Export**: Generate text exports compatible with FACTS school management system
 - **Email Export**: Send PDF and TXT exports via email with pre-filled recipients
 - **Tauri Desktop App**: Cross-platform desktop application (Windows, macOS, Linux)

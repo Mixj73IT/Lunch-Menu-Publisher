@@ -62,11 +62,12 @@ const Editing = {
 
         dayData.entree = '';
         dayData.sides = [];
+        dayData.specialEvent = '';
 
         if (value !== '') {
             const parts = value.split(/\s*\|\s*/);
             dayData.entree = parts[0].trim();
-            
+
             if (parts.length > 1) {
                 dayData.sides = parts[1].split(/,\s*/).map(s => s.trim()).filter(s => s);
             }

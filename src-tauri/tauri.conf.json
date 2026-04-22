@@ -2,8 +2,8 @@
   "build": {
     "beforeBuildCommand": "",
     "beforeDevCommand": "",
-    "devPath": "../ui/index.html",
-    "distDir": "../ui",
+    "devPath": "../index.html",
+    "distDir": "..",
     "withGlobalTauri": true
   },
   "tauri": {
@@ -20,7 +20,9 @@
         "depends": []
       },
       "externalBin": [],
-      "icon": ["icons/icon.ico"],
+      "icon": [
+        "icons/icon.ico"
+      ],
       "identifier": "com.school.lunchmenu",
       "longDescription": "A professional lunch menu publisher for schools",
       "macOS": {
@@ -50,7 +52,7 @@
     },
     "windows": [
       {
-        "fullscreen": false,
+        "fullscreen": true,
         "height": 900,
         "resizable": true,
         "title": "Lunch Menu Publisher",

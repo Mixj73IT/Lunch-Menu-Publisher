@@ -42,8 +42,22 @@ const Tiles = {
         el.dataset.tileType = tile.type;
         el.textContent = tile.name;
 
+        // Delete button
+        const removeBtn = document.createElement('button');
+        removeBtn.className = 'tile-remove';
+        removeBtn.textContent = '×';
+        removeBtn.title = 'Remove this tile';
+        removeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.removeTile(tile.id, tile.type);
+        });
+        el.appendChild(removeBtn);
+
         // Mouse-based drag and drop for Tauri compatibility
-        el.addEventListener('mousedown', (e) => this.handleMouseDown(e, tile));
+        el.addEventListener('mousedown', (e) => {
+            if (e.target.classList.contains('tile-remove')) return;
+            this.handleMouseDown(e, tile);
+        });
         el.style.cursor = 'grab';
 
         return el;
