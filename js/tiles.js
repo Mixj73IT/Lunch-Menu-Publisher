@@ -8,6 +8,8 @@ const Tiles = {
     dragElement: null,
     dragOffsetX: 0,
     dragOffsetY: 0,
+    boundMouseMove: null,
+    boundMouseUp: null,
 
     init() {
         this.renderLibraries();
@@ -70,9 +72,12 @@ const Tiles = {
 
         document.body.appendChild(this.dragElement);
 
-        // Add global mouse move and mouse up listeners with bound context
-        document.addEventListener('mousemove', this.handleMouseMove.bind(this));
-        document.addEventListener('mouseup', this.handleMouseUp.bind(this));
+        // Add global mouse move and mouse up listeners
+        this.boundMouseMove = this.handleMouseMove.bind(this);
+        this.boundMouseUp = this.handleMouseUp.bind(this);
+        
+        document.addEventListener('mousemove', this.boundMouseMove);
+        document.addEventListener('mouseup', this.boundMouseUp);
 
         e.target.classList.add('dragging');
     },
@@ -136,8 +141,8 @@ const Tiles = {
             tile.classList.remove('dragging');
         });
 
-        document.removeEventListener('mousemove', this.handleMouseMove.bind(this));
-        document.removeEventListener('mouseup', this.handleMouseUp.bind(this));
+        document.removeEventListener('mousemove', this.boundMouseMove);
+        document.removeEventListener('mouseup', this.boundMouseUp);
     },
 
     setupDragEvents() {
@@ -199,17 +204,27 @@ const Tiles = {
     updateGridDensity() {
         const entreePanel = document.getElementById('entreePanel');
         const sidePanel = document.getElementById('sidePanel');
+        const specialPanel = document.getElementById('specialPanel');
+        
         const entreeGrid = document.getElementById('entreeGrid');
         const sideGrid = document.getElementById('sideGrid');
+        const specialGrid = document.getElementById('specialGrid');
 
         const compactEnabled = State.settings.compactGridEnabled;
 
         if (compactEnabled) {
-            entreeGrid.dataset.columns = sidePanel.classList.contains('collapsed') ? '3' : '2';
-            sideGrid.dataset.columns = entreePanel.classList.contains('collapsed') ? '3' : '2';
+            // Entrees (Left) get 3 columns if the Right side is collapsed
+            const rightCollapsed = sidePanel.classList.contains('collapsed') && specialPanel.classList.contains('collapsed');
+            entreeGrid.dataset.columns = rightCollapsed ? '3' : '2';
+
+            // Sides and Special (Right) get 3 columns if the Left side is collapsed
+            const leftCollapsed = entreePanel.classList.contains('collapsed');
+            sideGrid.dataset.columns = leftCollapsed ? '3' : '2';
+            specialGrid.dataset.columns = leftCollapsed ? '3' : '2';
         } else {
             entreeGrid.dataset.columns = '2';
             sideGrid.dataset.columns = '2';
+            specialGrid.dataset.columns = '2';
         }
     },
 

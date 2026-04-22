@@ -70,6 +70,10 @@ const Editing = {
             if (parts.length > 1) {
                 dayData.sides = parts[1].split(/,\s*/).map(s => s.trim()).filter(s => s);
             }
+
+            if (parts.length > 2) {
+                dayData.specialEvent = parts[2].trim();
+            }
         }
 
         State.setDay(State.currentMonth, State.currentYear, date, dayData);

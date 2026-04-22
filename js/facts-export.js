@@ -45,7 +45,7 @@ const FactsExport = {
             const dayData = menu.days[dateKey];
 
             if (!dayData || dayData.isNoSchool) continue;
-            if (!dayData.entree && (!dayData.sides || dayData.sides.length === 0)) continue;
+            if (!dayData.entree && (!dayData.sides || dayData.sides.length === 0) && !dayData.specialEvent) continue;
 
             const dayAbbr = this.dayNames[dayOfWeek];
             const monthAbbr = State.currentMonth + 1;

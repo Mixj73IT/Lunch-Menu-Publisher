@@ -181,25 +181,9 @@ body {
     border-left: 1px solid var(--color-border);
 }
 
-.panel-right {
-    order: 3;
-}
-
 .panel-special {
-    position: fixed;
-    bottom: 0;
-    right: 0;
-    width: var(--panel-width);
-    background: var(--color-panel);
-    border: 1px solid var(--color-border);
-    border-top-left-radius: 8px;
-    z-index: 1000;
-    max-height: 300px;
-    overflow: hidden;
-}
-
-.panel-special.collapsed .panel-content {
-    display: none;
+    background: #fff3cd;
+    border-left: 1px solid var(--color-border);
 }
 
 .panel-special .panel-header {
@@ -207,25 +191,77 @@ body {
     border-bottom-color: #ffc107;
 }
 
-.panel.collapsed {
-    width: 40px;
-}
-
+/* Vertical text for collapsed side panel headers - Tool Tray Look */
 .panel.collapsed .panel-content {
     display: none;
 }
 
+.panel.collapsed .panel-header {
+    height: auto;
+    padding: 10px 0;
+}
+
+.panel.collapsed .panel-header-actions {
+    flex-direction: row;
+    justify-content: center;
+    gap: 8px;
+}
+
+.panel.collapsed .panel-header h2 {
+    display: block !important;
+    writing-mode: vertical-lr;
+    text-orientation: upright;
+    letter-spacing: 0.3em;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--color-accent);
+    margin: 15px 0 0 0;
+    opacity: 0.8;
+}
+
+/* Reset buttons for collapsed state */
+.panel.collapsed .collapse-btn,
+.panel.collapsed .add-btn {
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+}
+
+.panel.collapsed {
+    width: 60px;
+}
+
+.panel-special.collapsed {
+    width: 60px !important;
+}
+
+/* Base Panel Header - Stacked for Uniformity (Open & Closed) */
 .panel-header {
     display: flex;
-    justify-content: space-between;
+    flex-direction: column; /* Buttons on Top, Label Underneath */
     align-items: center;
-    padding: 12px 15px;
+    padding: 15px 10px;
+    background: var(--color-panel-header);
     border-bottom: 1px solid var(--color-border);
+    gap: 12px;
+}
+
+.panel-header h2 {
+    font-size: 1.1rem;
+    color: var(--color-text);
+    margin: 0;
+    text-align: center;
 }
 
 .panel-header-actions {
     display: flex;
-    gap: 8px;
+    flex-direction: row;
+    gap: 12px;
     align-items: center;
 }
 
@@ -288,6 +324,13 @@ body {
 
 .tile-grid[data-columns="3"] {
     grid-template-columns: repeat(3, 1fr);
+    gap: 5px; /* Tighter gap for 3 columns */
+}
+
+.tile-grid[data-columns="3"] .tile {
+    min-width: 60px; /* Reduced min-width to fit 3 columns in 220px */
+    font-size: 0.8rem;
+    padding: 8px 4px;
 }
 
 .tile {
@@ -362,7 +405,7 @@ cursor: grabbing;
     flex: 1;
     display: flex;
     flex-direction: column;
-    padding: 20px;
+    padding: 20px 10px;
     overflow-y: auto;
 }
 

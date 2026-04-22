@@ -81,16 +81,20 @@ const PanelCollapse = {
             const panelName = btn.dataset.panel;
             const panel = document.getElementById(panelName + 'Panel');
             const isCollapsed = panel.classList.contains('collapsed');
-            const title = panel.querySelector('h2');
 
             if (isCollapsed) {
-                title.style.display = 'none';
+                // Point inward to main content (to open)
                 if (panelName === 'entree') {
-                    btn.textContent = 'Entrees';
-                } else if (panelName === 'side') {
-                    btn.textContent = 'Sides';
-                } else if (panelName === 'special') {
-                    btn.textContent = 'Special';
+                    btn.textContent = '>';
+                } else if (panelName === 'side' || panelName === 'special') {
+                    btn.textContent = '<';
+                }
+            } else {
+                // Point outward to screen edges (to collapse)
+                if (panelName === 'entree') {
+                    btn.textContent = '<';
+                } else if (panelName === 'side' || panelName === 'special') {
+                    btn.textContent = '>';
                 }
             }
         });
@@ -103,27 +107,19 @@ const PanelCollapse = {
                 const panel = document.getElementById(panelName + 'Panel');
                 panel.classList.toggle('collapsed');
 
-                // Update collapse button text
                 const isCollapsed = panel.classList.contains('collapsed');
-                const title = panel.querySelector('h2');
 
                 if (isCollapsed) {
-                    title.style.display = 'none';
                     if (panelName === 'entree') {
-                        btn.textContent = 'Entrees';
-                    } else if (panelName === 'side') {
-                        btn.textContent = 'Sides';
-                    } else if (panelName === 'special') {
-                        btn.textContent = 'Special';
+                        btn.textContent = '>';
+                    } else if (panelName === 'side' || panelName === 'special') {
+                        btn.textContent = '<';
                     }
                 } else {
-                    title.style.display = 'block';
                     if (panelName === 'entree') {
                         btn.textContent = '<';
-                    } else if (panelName === 'side') {
+                    } else if (panelName === 'side' || panelName === 'special') {
                         btn.textContent = '>';
-                    } else if (panelName === 'special') {
-                        btn.textContent = '∨';
                     }
                 }
 
