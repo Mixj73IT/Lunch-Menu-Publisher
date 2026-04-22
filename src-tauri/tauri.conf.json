@@ -1,9 +1,9 @@
 {
   "build": {
-    "beforeBuildCommand": "",
+    "beforeBuildCommand": "powershell -Command \"if (!(Test-Path dist)) { New-Item -ItemType Directory -Path dist }; Copy-Item -Path index.html,css,js,data -Destination dist -Recurse -Force\"",
     "beforeDevCommand": "",
     "devPath": "../index.html",
-    "distDir": "..",
+    "distDir": "../dist",
     "withGlobalTauri": true
   },
   "tauri": {
@@ -52,7 +52,7 @@
     },
     "windows": [
       {
-        "fullscreen": true,
+        "fullscreen": false,
         "height": 900,
         "resizable": true,
         "title": "Lunch Menu Publisher",

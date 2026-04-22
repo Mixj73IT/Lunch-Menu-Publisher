@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monthly Lunch Menu Publisher</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;600;700&family=Dancing+Script:wght@400;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/app.css">
+    <link rel="stylesheet" href="css/pdf.css" media="print">
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="app-header no-print">
+            <div class="header-left">
+                <h1>Lunch Menu Publisher</h1>
+                <div class="month-selector">
+                    <button id="prevMonth">&lt;</button>
+                    <span id="currentMonthLabel">September 2025</span>
+                    <button id="nextMonth">&gt;</button>
+                </div>
+            </div>
+            <div class="header-right">
+                <button id="previewBtn" class="btn btn-primary">Preview</button>
+                <button id="emailPdfBtn" class="btn btn-secondary no-print">Email PDF</button>
+                <button id="exportBtn" class="btn btn-secondary">FACTS Export</button>
+                <button id="emailTxtBtn" class="btn btn-secondary no-print">Email TXT</button>
+                <button id="settingsBtn" class="btn btn-icon" title="Settings">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M12 1v6m0 6v6m4.22-10.22l4.24-4.24M6.34 17.66l-4.24 4.24M23 12h-6m-6 0H1m20.24 4.24l-4.24-4.24M6.34 6.34L2.1 2.1"></path>
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Left Panel: Entrée Library -->
+            <aside class="panel panel-left no-print" id="entreePanel">
+                <div class="panel-header">
+                    <div class="panel-header-actions">
+                        <button class="add-btn" data-type="entree" title="Add new entrée">+</button>
+                        <button class="collapse-btn" data-panel="entree">&lt;</button>
+                    </div>
+                    <h2>Entrées</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="tile-grid" id="entreeGrid" data-columns="2">
+                        <!-- Tiles populated by JS -->
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Center: Calendar -->
+            <section class="calendar-container" id="calendarContainer">
+                <div class="calendar-header">
+                    <h1 class="month-title" id="monthTitle">September 2025</h1>
+                    <div class="verse-display" id="verseDisplay">
+                        <p class="verse-text" id="verseText"></p>
+                        <p class="verse-ref" id="verseRef"></p>
+                    </div>
+                    <button id="selectVerseBtn" class="btn btn-secondary btn-sm no-print">Select Verse</button>
+                </div>
+                <div class="calendar-grid" id="calendarGrid">
+                    <!-- Calendar populated by JS -->
+                </div>
+            </section>
+
+            <!-- Right Panel: Side Library -->
+            <aside class="panel panel-right no-print" id="sidePanel">
+                <div class="panel-header">
+                    <div class="panel-header-actions">
+                        <button class="add-btn" data-type="side" title="Add new side">+</button>
+                        <button class="collapse-btn" data-panel="side">&gt;</button>
+                    </div>
+                    <h2>Sides</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="tile-grid" id="sideGrid" data-columns="2">
+                        <!-- Tiles populated by JS -->
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Special Events Panel (collapsed by default) -->
+            <aside class="panel panel-special no-print collapsed" id="specialPanel">
+                <div class="panel-header">
+                    <div class="panel-header-actions">
+                        <button class="add-btn" data-type="special" title="Add new special event">+</button>
+                        <button class="collapse-btn" data-panel="special">∨</button>
+                    </div>
+                    <h2>Special Events</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="tile-grid" id="specialGrid" data-columns="2">
+                        <!-- Tiles populated by JS -->
+                    </div>
+                </div>
+            </aside>
+        </main>
+
+        <!-- Settings Modal -->
+        <div id="settingsModal" class="modal no-print" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Settings</h2>
+                    <button class="close-btn" id="closeSettings">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <label class="setting-item">
+                        <input type="checkbox" id="compactGridToggle">
+                        <span>Enable 3-column tiles when opposite panel is collapsed</span>
+                    </label>
+                    <label class="setting-item">
+                        <input type="checkbox" id="versesToggle" checked>
+                        <span>Show verses on PDF</span>
+                    </label>
+                    <label class="setting-item">
+                        <input type="checkbox" id="advancedVerseToggle" checked>
+                        <span>Enable advanced verse lookup (Book → Chapter → Verse)</span>
+                    </label>
+                    <div class="setting-item">
+                        <label for="pdfEmailInput">PDF Email Recipient:</label>
+                        <input type="email" id="pdfEmailInput" placeholder="email@example.com">
+                    </div>
+                    <div class="setting-item">
+                        <label for="txtEmailInput">TXT Email Recipient:</label>
+                        <input type="email" id="txtEmailInput" placeholder="email@example.com">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Verse Selector Modal -->
+        <div id="verseModal" class="modal no-print" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Select Verse</h2>
+                    <button class="close-btn" id="closeVerse">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="verse-tabs">
+                        <button class="tab-btn active" id="curatedTab">Curated</button>
+                        <button class="tab-btn" id="advancedTab" style="display: none;">Advanced</button>
+                    </div>
+                    <div class="verse-list" id="verseList">
+                        <!-- Curated verses populated by JS -->
+                    </div>
+                    <div class="verse-advanced" id="verseAdvanced" style="display: none;">
+                        <select id="bookSelect"><option>Select Book...</option></select>
+                        <select id="chapterSelect" disabled><option>Chapter</option></select>
+                        <select id="verseSelect" disabled><option>Verse</option></select>
+                        <button id="selectAdvancedVerse" class="btn btn-primary">Select</button>
+                    </div>
+                    <button id="noVerseBtn" class="btn btn-secondary">No Verse</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- FACTS Export Modal -->
+        <div id="exportModal" class="modal no-print" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>FACTS Export</h2>
+                    <button class="close-btn" id="closeExport">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <p>Copy this text and paste into FACTS:</p>
+                    <textarea id="exportText" readonly></textarea>
+                    <button id="copyExportBtn" class="btn btn-primary">Copy to Clipboard</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/state.js"></script>
+    <script src="js/tiles.js"></script>
+    <script src="js/calendar.js"></script>
+    <script src="js/editing.js"></script>
+    <script src="js/verses.js"></script>
+    <script src="js/settings.js"></script>
+    <script src="js/facts-export.js"></script>
+    <script src="js/email-export.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
