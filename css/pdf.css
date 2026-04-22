@@ -37,12 +37,16 @@
     .main-content {
         height: auto;
         display: block;
+        outline: none !important;
+        border: none !important;
     }
 
     .calendar-container {
         padding: 0;
         width: 100%;
         max-width: 100%;
+        outline: none !important;
+        border: none !important;
     }
 
     /* ========================================
