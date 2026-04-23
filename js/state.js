@@ -111,6 +111,7 @@ const State = {
             return data ? JSON.parse(data) : null;
         } catch (e) {
             console.error('Error loading from localStorage:', e);
+            this.showError('Failed to load saved data. Your settings may have been reset.');
             return null;
         }
     },
@@ -120,7 +121,35 @@ const State = {
             localStorage.setItem(key, JSON.stringify(data));
         } catch (e) {
             console.error('Error saving to localStorage:', e);
+            this.showError('Failed to save data. Your browser storage may be full. Please clear some data.');
         }
+    },
+
+    showError(message) {
+        const existingError = document.querySelector('.error-toast');
+        if (existingError) existingError.remove();
+
+        const toast = document.createElement('div');
+        toast.className = 'error-toast';
+        toast.textContent = message;
+        toast.style.cssText = `
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #dc3545;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 4px;
+            z-index: 1000;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            animation: slideIn 0.3s ease;
+        `;
+        document.body.appendChild(toast);
+
+        setTimeout(() => {
+            toast.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => toast.remove(), 300);
+        }, 5000);
     },
 
     saveEntreeTiles() {

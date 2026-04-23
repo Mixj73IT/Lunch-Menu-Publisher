@@ -824,16 +824,41 @@ body.preview-mode #exitPreviewBtn {
         z-index: 50;
         height: 100%;
     }
-    
+
     .panel.collapsed {
         width: 40px;
     }
-    
+
     .panel-left {
         left: 0;
     }
-    
+
     .panel-right {
         right: 0;
+    }
+}
+
+/* ========================================
+   ERROR TOAST ANIMATIONS
+   ======================================== */
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
     }
 }

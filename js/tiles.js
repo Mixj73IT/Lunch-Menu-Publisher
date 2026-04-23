@@ -10,6 +10,7 @@ const Tiles = {
     dragOffsetY: 0,
     boundMouseMove: null,
     boundMouseUp: null,
+    undoStack: [],
 
     init() {
         this.renderLibraries();
@@ -279,6 +280,9 @@ const Tiles = {
     removeTile(tileId, type) {
         if (!confirm(`Remove this ${type}?`)) return;
 
+        // Save state for undo
+        this.pushUndoState(type);
+
         if (type === 'entree') {
             State.entreeTiles = State.entreeTiles.filter(t => t.id !== tileId);
             State.saveEntreeTiles();
@@ -292,5 +296,70 @@ const Tiles = {
             State.saveSpecialEventTiles();
             this.renderGrid('specialGrid', State.specialEventTiles);
         }
+
+        this.showUndoButton();
+    },
+
+    pushUndoState(type) {
+        let tiles;
+        if (type === 'entree') {
+            tiles = [...State.entreeTiles];
+        } else if (type === 'side') {
+            tiles = [...State.sideTiles];
+        } else if (type === 'special') {
+            tiles = [...State.specialEventTiles];
+        }
+
+        this.undoStack.push({ type, tiles });
+        // Keep only last 10 actions
+        if (this.undoStack.length > 10) {
+            this.undoStack.shift();
+        }
+    },
+
+    undo() {
+        if (this.undoStack.length === 0) return;
+
+        const lastState = this.undoStack.pop();
+        const { type, tiles } = lastState;
+
+        if (type === 'entree') {
+            State.entreeTiles = tiles;
+            State.saveEntreeTiles();
+            this.renderGrid('entreeGrid', State.entreeTiles);
+        } else if (type === 'side') {
+            State.sideTiles = tiles;
+            State.saveSideTiles();
+            this.renderGrid('sideGrid', State.sideTiles);
+        } else if (type === 'special') {
+            State.specialEventTiles = tiles;
+            State.saveSpecialEventTiles();
+            this.renderGrid('specialGrid', State.specialEventTiles);
+        }
+
+        if (this.undoStack.length === 0) {
+            this.hideUndoButton();
+        }
+    },
+
+    showUndoButton() {
+        let undoBtn = document.getElementById('undoBtn');
+        if (!undoBtn) {
+            undoBtn = document.createElement('button');
+            undoBtn.id = 'undoBtn';
+            undoBtn.className = 'btn btn-secondary';
+            undoBtn.textContent = 'Undo';
+            undoBtn.style.position = 'fixed';
+            undoBtn.style.bottom = '20px';
+            undoBtn.style.left = '20px';
+            undoBtn.style.zIndex = '1000';
+            undoBtn.addEventListener('click', () => this.undo());
+            document.body.appendChild(undoBtn);
+        }
+    },
+
+    hideUndoButton() {
+        const undoBtn = document.getElementById('undoBtn');
+        if (undoBtn) undoBtn.remove();
     }
 };
