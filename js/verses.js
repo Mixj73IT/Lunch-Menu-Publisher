@@ -11,65 +11,8 @@ const VerseSelector = {
         this.setupEventListeners();
     },
 
-    showError(message) {
-        const existingError = document.querySelector('.error-toast');
-        if (existingError) existingError.remove();
-
-        const toast = document.createElement('div');
-        toast.className = 'error-toast';
-        toast.textContent = message;
-        toast.style.cssText = `
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #dc3545;
-            color: white;
-            padding: 12px 20px;
-            border-radius: 4px;
-            z-index: 1000;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-            animation: slideIn 0.3s ease;
-        `;
-        document.body.appendChild(toast);
-
-        setTimeout(() => {
-            toast.style.animation = 'slideOut 0.3s ease';
-            setTimeout(() => toast.remove(), 300);
-        }, 5000);
-    },
-
-    showLoading(message) {
-        const existingLoading = document.querySelector('.loading-toast');
-        if (existingLoading) existingLoading.remove();
-
-        const toast = document.createElement('div');
-        toast.className = 'loading-toast';
-        toast.textContent = message;
-        toast.style.cssText = `
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #0d6efd;
-            color: white;
-            padding: 12px 20px;
-            border-radius: 4px;
-            z-index: 1000;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-            animation: slideIn 0.3s ease;
-        `;
-        document.body.appendChild(toast);
-    },
-
-    hideLoading() {
-        const loading = document.querySelector('.loading-toast');
-        if (loading) {
-            loading.style.animation = 'slideOut 0.3s ease';
-            setTimeout(() => loading.remove(), 300);
-        }
-    },
-
     async loadCuratedVerses() {
-        this.showLoading('Loading curated verses...');
+        State.showLoading('Loading curated verses...');
         try {
             const response = await fetch('data/curated-verses.json');
             const data = await response.json();
@@ -78,14 +21,16 @@ const VerseSelector = {
         } catch (err) {
             console.error('Failed to load curated verses:', err);
             this.curatedVerses = [];
-            this.showError('Failed to load curated verses. Please check your internet connection and refresh the page.');
+            State.showError('Failed to load curated verses. Please check your internet connection and refresh the page.');
         } finally {
-            this.hideLoading();
+            State.hideLoading();
         }
     },
 
     setupEventListeners() {
-        document.getElementById('closeVerse').addEventListener('click', () => this.close());
+        const closeVerse = document.getElementById('closeVerse');
+        if (!closeVerse) return;
+        closeVerse.addEventListener('click', () => this.close());
         document.getElementById('curatedTab').addEventListener('click', () => this.showTab('curated'));
         document.getElementById('advancedTab').addEventListener('click', () => this.showTab('advanced'));
         document.getElementById('noVerseBtn').addEventListener('click', () => this.selectVerse(null));
@@ -136,6 +81,10 @@ const VerseSelector = {
             advancedTab.classList.add('active');
             verseList.style.display = 'none';
             verseAdvanced.style.display = 'flex';
+            // Populate books if Bible data is now loaded
+            if (this.bibleData) {
+                this.populateBookSelect();
+            }
         }
     },
 
@@ -143,14 +92,9 @@ const VerseSelector = {
         const list = document.getElementById('verseList');
         list.innerHTML = '';
 
-        console.log('Current month:', State.currentMonth + 1);
-        console.log('Total curated verses:', this.curatedVerses.length);
-
         const monthVerses = this.curatedVerses.filter(v =>
             v.months.includes(State.currentMonth + 1)
         );
-
-        console.log('Filtered verses for month:', monthVerses.length);
 
         monthVerses.forEach(verse => {
             const el = document.createElement('div');
@@ -272,17 +216,19 @@ const BibleData = {
     data: null,
 
     async load() {
-        VerseSelector.showLoading('Loading Bible data...');
+        State.showLoading('Loading Bible data...');
         try {
             const response = await fetch('data/kjv-bible.json');
             this.data = await response.json();
             VerseSelector.bibleData = this.data;
             console.log('Loaded Bible data with', Object.keys(this.data).length, 'books');
+            // If the advanced tab is already open, populate the book list now
+            VerseSelector.populateBookSelect();
         } catch (err) {
             console.error('Failed to load Bible data:', err);
-            VerseSelector.showError('Failed to load Bible data. Advanced verse lookup will not be available.');
+            State.showError('Failed to load Bible data. Advanced verse lookup will not be available.');
         } finally {
-            VerseSelector.hideLoading();
+            State.hideLoading();
         }
     }
 };

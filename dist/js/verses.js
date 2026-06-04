@@ -12,6 +12,7 @@ const VerseSelector = {
     },
 
     async loadCuratedVerses() {
+        State.showLoading('Loading curated verses...');
         try {
             const response = await fetch('data/curated-verses.json');
             const data = await response.json();
@@ -20,11 +21,16 @@ const VerseSelector = {
         } catch (err) {
             console.error('Failed to load curated verses:', err);
             this.curatedVerses = [];
+            State.showError('Failed to load curated verses. Please check your internet connection and refresh the page.');
+        } finally {
+            State.hideLoading();
         }
     },
 
     setupEventListeners() {
-        document.getElementById('closeVerse').addEventListener('click', () => this.close());
+        const closeVerse = document.getElementById('closeVerse');
+        if (!closeVerse) return;
+        closeVerse.addEventListener('click', () => this.close());
         document.getElementById('curatedTab').addEventListener('click', () => this.showTab('curated'));
         document.getElementById('advancedTab').addEventListener('click', () => this.showTab('advanced'));
         document.getElementById('noVerseBtn').addEventListener('click', () => this.selectVerse(null));
@@ -75,6 +81,10 @@ const VerseSelector = {
             advancedTab.classList.add('active');
             verseList.style.display = 'none';
             verseAdvanced.style.display = 'flex';
+            // Populate books if Bible data is now loaded
+            if (this.bibleData) {
+                this.populateBookSelect();
+            }
         }
     },
 
@@ -82,28 +92,35 @@ const VerseSelector = {
         const list = document.getElementById('verseList');
         list.innerHTML = '';
 
-        console.log('Current month:', State.currentMonth + 1);
-        console.log('Total curated verses:', this.curatedVerses.length);
-
         const monthVerses = this.curatedVerses.filter(v =>
             v.months.includes(State.currentMonth + 1)
         );
 
-        console.log('Filtered verses for month:', monthVerses.length);
-
         monthVerses.forEach(verse => {
             const el = document.createElement('div');
             el.className = 'verse-option';
-            el.innerHTML = `
-                <p class="v-text">"${verse.text}"</p>
-                <p class="v-ref">${verse.reference}</p>
-            `;
+            
+            const textP = document.createElement('p');
+            textP.className = 'v-text';
+            textP.textContent = `"${verse.text}"`;
+            
+            const refP = document.createElement('p');
+            refP.className = 'v-ref';
+            refP.textContent = verse.reference;
+            
+            el.appendChild(textP);
+            el.appendChild(refP);
             el.addEventListener('click', () => this.selectVerse(verse));
             list.appendChild(el);
         });
 
         if (monthVerses.length === 0) {
-            list.innerHTML = '<p style="padding: 20px; text-align: center; color: #666;">No curated verses available for this month.</p>';
+            const noVersesMsg = document.createElement('p');
+            noVersesMsg.style.padding = '20px';
+            noVersesMsg.style.textAlign = 'center';
+            noVersesMsg.style.color = '#666';
+            noVersesMsg.textContent = 'No curated verses available for this month.';
+            list.appendChild(noVersesMsg);
         }
     },
 
@@ -199,13 +216,19 @@ const BibleData = {
     data: null,
 
     async load() {
+        State.showLoading('Loading Bible data...');
         try {
             const response = await fetch('data/kjv-bible.json');
             this.data = await response.json();
             VerseSelector.bibleData = this.data;
             console.log('Loaded Bible data with', Object.keys(this.data).length, 'books');
+            // If the advanced tab is already open, populate the book list now
+            VerseSelector.populateBookSelect();
         } catch (err) {
             console.error('Failed to load Bible data:', err);
+            State.showError('Failed to load Bible data. Advanced verse lookup will not be available.');
+        } finally {
+            State.hideLoading();
         }
     }
 };

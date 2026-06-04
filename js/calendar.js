@@ -12,12 +12,13 @@ const Calendar = {
 
     init() {
         this.setupNavigation();
-        this.setupDropTargets();
         this.render();
     },
 
     setupNavigation() {
-        document.getElementById('prevMonth').addEventListener('click', () => {
+        const prevBtn = document.getElementById('prevMonth');
+        if (!prevBtn) return;
+        prevBtn.addEventListener('click', () => {
             this.changeMonth(-1);
         });
 
@@ -197,6 +198,14 @@ const Calendar = {
                 content.appendChild(milkDiv);
             }
 
+            // Add specials if present (extra-purchase food)
+            if (dayData.special) {
+                const specDiv = document.createElement('div');
+                specDiv.className = 'day-special';
+                specDiv.textContent = dayData.special;
+                content.appendChild(specDiv);
+            }
+
             // Add special event if present
             if (dayData.specialEvent) {
                 const specialDiv = document.createElement('div');
@@ -206,93 +215,84 @@ const Calendar = {
             }
         }
 
+        // Add clear day button for weekdays with content
+        if (!isWeekend && !isNoSchool) {
+            const clearBtn = document.createElement('button');
+            clearBtn.className = 'clear-day-btn';
+            clearBtn.textContent = '×';
+            clearBtn.title = 'Clear this day';
+            clearBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.clearDay(day.fullDate);
+            });
+            cell.appendChild(clearBtn);
+        }
+
         cell.appendChild(content);
 
         const editInput = document.createElement('input');
         editInput.type = 'text';
         editInput.className = 'day-edit-input';
         editInput.value = this.formatDayEditValue(dayData);
-        editInput.placeholder = 'Drag tile or type: Entree | Side1, Side2 | Special';
+        editInput.placeholder = 'Drag tile or type: Entree | Side1, Side2 | Special | Event';
         cell.appendChild(editInput);
 
         return cell;
     },
 
     formatDayEditValue(dayData) {
-        if (!dayData.entree && (!dayData.sides || dayData.sides.length === 0) && !dayData.specialEvent) {
+        if (!dayData.entree && (!dayData.sides || dayData.sides.length === 0) && !dayData.special && !dayData.specialEvent) {
             return '';
         }
-        // Always preserve the three-part structure: entree | sides | special
         let value = dayData.entree || '';
-        if (dayData.sides && dayData.sides.length > 0) {
-            value += ' | ' + dayData.sides.join(', ');
-        } else if (dayData.specialEvent) {
-            // Add empty sides section if there's a special event
-            value += ' | ';
-        }
-        if (dayData.specialEvent) {
-            value += ' | ' + dayData.specialEvent;
-        }
+        value += ' | ' + (dayData.sides && dayData.sides.length > 0 ? dayData.sides.join(', ') : '');
+        value += ' | ' + (dayData.special || '');
+        value += ' | ' + (dayData.specialEvent || '');
         return value;
     },
 
-    setupDropTargets() {
-        const grid = document.getElementById('calendarGrid');
 
-        grid.addEventListener('dragover', (e) => {
-            const cell = e.target.closest('.day-cell');
-            if (cell && !cell.classList.contains('no-school') && !cell.classList.contains('empty')) {
-                e.preventDefault();
-                cell.classList.add('drag-over');
-            }
-        });
 
-        grid.addEventListener('dragleave', (e) => {
-            const cell = e.target.closest('.day-cell');
-            if (cell) {
-                cell.classList.remove('drag-over');
-            }
-        });
-
-        grid.addEventListener('drop', (e) => {
-            const cell = e.target.closest('.day-cell');
-            if (cell) {
-                cell.classList.remove('drag-over');
-                this.handleDrop(e, cell);
-            }
-        });
+    clearDay(date) {
+        State.pushUndo();
+        const dayData = State.getDay(State.currentMonth, State.currentYear, date);
+        dayData.entree = '';
+        dayData.sides = [];
+        dayData.special = '';
+        dayData.specialEvent = '';
+        State.setDay(State.currentMonth, State.currentYear, date, dayData);
+        State.showSaved();
+        this.renderCalendar();
     },
 
-    handleDrop(e, cell) {
-        e.preventDefault();
-        const date = cell.dataset.date;
-        if (!date) return;
+    copyFromPreviousMonth() {
+        const prevMonth = State.currentMonth === 0 ? 11 : State.currentMonth - 1;
+        const prevYear = State.currentMonth === 0 ? State.currentYear - 1 : State.currentYear;
+        const prevMenu = State.getMenu(prevMonth, prevYear);
 
-        try {
-            const tileData = JSON.parse(e.dataTransfer.getData('text/plain'));
-            const dayData = State.getDay(State.currentMonth, State.currentYear, date);
-
-            if (tileData.type === 'entree') {
-                dayData.entree = tileData.name;
-            } else if (tileData.type === 'side') {
-                if (!dayData.sides.includes(tileData.name)) {
-                    dayData.sides.push(tileData.name);
-                }
-            } else if (tileData.type === 'special') {
-                dayData.specialEvent = tileData.name;
-            }
-
-            State.setDay(State.currentMonth, State.currentYear, date, dayData);
-            this.renderCalendar();
-        } catch (err) {
-            console.error('Error handling drop:', err);
+        if (Object.keys(prevMenu.days).length === 0) {
+            alert('No data found for the previous month.');
+            return;
         }
+
+        if (!confirm('Copy all menu data from the previous month? This will overwrite the current month.')) return;
+
+        State.pushUndo();
+        const currentMenu = State.getMenu(State.currentMonth, State.currentYear);
+        // Copy day data but keep the current verse
+        const currentVerse = currentMenu.verse;
+        currentMenu.days = JSON.parse(JSON.stringify(prevMenu.days));
+        currentMenu.verse = currentVerse;
+        State.saveMenu(currentMenu);
+        State.showSaved();
+        this.render();
     },
 
     toggleNoSchool(date) {
+        State.pushUndo();
         const dayData = State.getDay(State.currentMonth, State.currentYear, date);
         const cell = document.querySelector(`.day-cell[data-date="${date}"]`);
-        
+
         if (cell && cell.classList.contains('weekend')) {
             return;
         }
@@ -301,9 +301,12 @@ const Calendar = {
         if (dayData.isNoSchool) {
             dayData.entree = '';
             dayData.sides = [];
+            dayData.special = '';
+            dayData.specialEvent = '';
         }
 
         State.setDay(State.currentMonth, State.currentYear, date, dayData);
+        State.showSaved();
         this.renderCalendar();
     }
 };

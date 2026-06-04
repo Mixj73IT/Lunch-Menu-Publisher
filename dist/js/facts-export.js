@@ -10,7 +10,9 @@ const FactsExport = {
     },
 
     setupEventListeners() {
-        document.getElementById('exportBtn').addEventListener('click', () => this.open());
+        const exportBtn = document.getElementById('exportBtn');
+        if (!exportBtn) return;
+        exportBtn.addEventListener('click', () => this.open());
         document.getElementById('closeExport').addEventListener('click', () => this.close());
         document.getElementById('copyExportBtn').addEventListener('click', () => this.copyToClipboard());
     },
@@ -45,7 +47,7 @@ const FactsExport = {
             const dayData = menu.days[dateKey];
 
             if (!dayData || dayData.isNoSchool) continue;
-            if (!dayData.entree && (!dayData.sides || dayData.sides.length === 0) && !dayData.specialEvent) continue;
+            if (!dayData.entree && (!dayData.sides || dayData.sides.length === 0) && !dayData.special && !dayData.specialEvent) continue;
 
             const dayAbbr = this.dayNames[dayOfWeek];
             const monthAbbr = State.currentMonth + 1;
@@ -54,6 +56,10 @@ const FactsExport = {
             let content = dayData.entree || '';
             if (dayData.sides && dayData.sides.length > 0) {
                 content += (content ? ' + ' : '') + dayData.sides.join(', ');
+            }
+
+            if (dayData.special) {
+                content += (content ? ' + ' : '') + '[' + dayData.special + ']';
             }
 
             if (dayData.specialEvent) {

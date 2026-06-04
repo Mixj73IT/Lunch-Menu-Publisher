@@ -31,7 +31,7 @@
     
     --panel-width: 220px;
     --header-height: 60px;
-    --day-min-height: 70px;
+    --day-min-height: 90px;
 }
 
 /* Reset & Base */
@@ -48,6 +48,9 @@ body {
     color: #212529;
     background: var(--color-bg);
     overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
 }
 
 /* ========================================
@@ -184,6 +187,12 @@ body {
 .panel-special {
     background: #fff3cd;
     border-left: 1px solid var(--color-border);
+    border-top: 2px solid #ff9800;
+}
+
+/* Collapsed special events panel: subtle attention pulse */
+.panel-special.collapsed {
+    border-left: 2px solid #ff9800;
 }
 
 .panel-special .panel-header {
@@ -191,7 +200,10 @@ body {
     border-bottom-color: #ffc107;
 }
 
-/* Vertical text for collapsed side panel headers - Tool Tray Look */
+.panel-special.collapsed .panel-header {
+    background: #fff8e1;
+}
+
 .panel.collapsed .panel-content {
     display: none;
 }
@@ -221,16 +233,6 @@ body {
 }
 
 /* Reset buttons for collapsed state */
-.panel.collapsed .collapse-btn,
-.panel.collapsed .add-btn {
-    width: 24px;
-    height: 24px;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-}
 
 .panel.collapsed {
     width: 60px;
@@ -252,10 +254,14 @@ body {
 }
 
 .panel-header h2 {
+    font-family: var(--font-serif);
     font-size: 1.1rem;
+    font-weight: 600;
     color: var(--color-text);
     margin: 0;
     text-align: center;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 .panel-header-actions {
@@ -273,32 +279,56 @@ body {
     height: 24px;
     border-radius: 50%;
     cursor: pointer;
-    font-size: 18px;
-    font-weight: 700;
-    line-height: 1;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: background 0.2s;
 }
 
-.add-btn:hover {
-    background: #0b5ed7;
+.add-btn svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
 }
 
-.panel-header h2 {
-    font-family: var(--font-serif);
-    font-size: 1rem;
-    font-weight: 600;
+.add-btn:hover {
+    background: #0b5ed7;
 }
 
 .collapse-btn {
     background: none;
     border: none;
     cursor: pointer;
-    font-size: 1rem;
-    padding: 5px;
+    padding: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-text-muted);
+    border-radius: 4px;
+    transition: background 0.15s, color 0.15s;
 }
+
+.collapse-btn:hover {
+    background: var(--color-border);
+    color: var(--color-text);
+}
+
+.collapse-btn svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    transition: transform 0.3s ease;
+}
+
+/* Chevron direction: left panels point left, right panels point right */
+.panel-left .collapse-btn svg { transform: rotate(180deg); }
+.panel-right .collapse-btn svg,
+.panel-special .collapse-btn svg { transform: rotate(0deg); }
+
+/* Collapsed: flip direction */
+.panel-left.collapsed .collapse-btn svg { transform: rotate(0deg); }
+.panel-right.collapsed .collapse-btn svg,
+.panel-special.collapsed .collapse-btn svg { transform: rotate(180deg); }
 
 .panel.collapsed .panel-header h2 {
     display: none;
@@ -334,15 +364,36 @@ body {
 }
 
 .tile {
-    padding: 10px 8px;
+    padding: 14px 8px 10px 8px;
     border: 1px solid var(--color-tile-border);
+    border-radius: 6px;
     cursor: grab;
     font-size: 14px;
     text-align: center;
-    transition: transform 0.1s, box-shadow 0.1s;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
     user-select: none;
     position: relative;
+    overflow: hidden;
 }
+
+/* Type-specific emoji icons */
+.tile.entree::before,
+.tile.side::before,
+.tile.specials::before,
+.tile.special::before,
+.tile.specialEvent::before {
+    display: block;
+    font-size: 0.75em;
+    margin-bottom: 2px;
+    opacity: 0.7;
+    line-height: 1;
+}
+
+.tile.entree::before { content: "🍽️  Entree"; }
+.tile.side::before    { content: "🥗  Side"; }
+.tile.specials::before    { content: "⭐  Special"; }
+.tile.special::before,
+.tile.specialEvent::before   { content: "📅  Event"; }
 
 .tile-remove {
     position: absolute;
@@ -375,27 +426,60 @@ body {
 
 .tile.entree {
     background: var(--color-tile-entree);
+    border-top: 3px solid #d4a017;
 }
 
 .tile.side {
-background: var(--color-tile-side);
+    background: var(--color-tile-side);
+    border-top: 3px solid #4caf50;
 }
 
-.tile.special {
-background: #fff3cd;
-border-color: #ffc107;
+.tile.special,
+.tile.specialEvent {
+    background: #fff3cd;
+    border-color: #ffc107;
+    border-top: 3px solid #ff9800;
+}
+
+.tile.specials {
+    background: #fce4ec;
+    border-color: #f48fb1;
+    border-top: 3px solid #e91e63;
 }
 
 .tile:hover {
-transform: translateY(-2px);
-box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
 }
 
+.tile.entree:hover {
+    box-shadow: 0 4px 12px rgba(212, 160, 23, 0.3);
+    border-color: #d4a017;
+}
+
+.tile.side:hover {
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+    border-color: #4caf50;
+}
+
+.tile.specials:hover {
+    box-shadow: 0 4px 12px rgba(233, 30, 99, 0.3);
+    border-color: #e91e63;
+}
+
+.tile.special:hover,
+.tile.specialEvent:hover {
+    box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
+    border-color: #ff9800;
+}
+
+
+
 .tile.dragging {
-opacity: 0.5;
-cursor: grabbing;
     opacity: 0.5;
     cursor: grabbing;
+    transform: scale(0.97);
+    box-shadow: none;
 }
 
 /* ========================================
@@ -419,6 +503,8 @@ cursor: grabbing;
     font-size: 2rem;
     font-weight: 700;
     margin-bottom: 15px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 .verse-display {
@@ -431,6 +517,8 @@ cursor: grabbing;
     font-size: 2.4rem;
     color: var(--color-text);
     line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 .verse-ref {
@@ -464,11 +552,11 @@ cursor: grabbing;
 .day-cell {
     background: var(--day-normal-bg);
     min-height: var(--day-min-height);
-    padding: 6px;
+    padding: 8px;
     position: relative;
     cursor: pointer;
     border: 1px solid var(--color-border);
-    font-size: clamp(15px, 1.5vw, 20px);
+    font-size: clamp(12px, 1.2vw, 14px);
 }
 
 .day-cell:hover {
@@ -575,39 +663,144 @@ cursor: grabbing;
 }
 
 .day-number {
-    font-weight: 600;
-    font-size: 0.85rem;
+    font-weight: 700;
+    font-size: 0.9rem;
     margin-bottom: 3px;
     display: block;
+    letter-spacing: 0.2px;
 }
 
 .day-content {
     font-size: inherit;
-    line-height: 1.2;
+    line-height: 1.35;
+    font-weight: 500;
 }
 
 .day-entree {
-    font-weight: 600;
-    margin-bottom: 2px;
+    font-weight: 700;
+    margin-bottom: 3px;
+    letter-spacing: 0.1px;
 }
 
 .day-sides {
     color: var(--color-text-muted);
+    margin-bottom: 1px;
 }
 
 .day-staple {
     color: var(--color-text-muted);
     font-style: italic;
     font-size: 0.9em;
-    margin-top: 2px;
+    margin-top: 3px;
+}
+
+.day-special {
+    color: #8B1A1A;
+    font-weight: 600;
+    font-size: 0.9em;
+    margin-top: 4px;
+    margin-bottom: 1px;
+    border-left: 3px solid #c62828;
+    padding-left: 6px;
+}
+
+.day-special::before {
+    content: "+ ";
+    color: #c62828;
 }
 
 .day-special-event {
-    color: var(--color-accent);
+    color: #1a56db;
     font-weight: 700;
     font-variant: small-caps;
-    font-size: 0.85em;
+    font-size: 0.95em;
     margin-top: 6px;
+    padding: 4px 10px;
+    background: #e8f0fe;
+    border-left: 4px solid #1a56db;
+    border-radius: 0 4px 4px 0;
+    letter-spacing: 0.5px;
+    display: block;
+}
+
+/* Clear day button */
+.clear-day-btn {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: 18px;
+    height: 18px;
+    font-size: 12px;
+    font-weight: 700;
+    background: transparent;
+    color: #ccc;
+    border: 1px solid #e0e0e0;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9;
+    transition: all 0.2s;
+    line-height: 1;
+}
+
+.clear-day-btn:hover {
+    color: #dc3545;
+    border-color: #dc3545;
+    background: #fff5f5;
+}
+
+/* Autosave badge */
+.autosave-badge {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #28a745;
+    color: white;
+    padding: 6px 14px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    z-index: 1000;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    pointer-events: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.autosave-badge.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Print button in preview mode */
+#printPreviewBtn {
+    display: none;
+}
+
+body.preview-mode #printPreviewBtn {
+    display: block;
+    position: fixed;
+    top: 20px;
+    right: 140px;
+    z-index: 300;
+}
+
+/* Panel: Specials (left side, below Entrees) */
+.panel-specials {
+    background: #fce4ec;
+    border-right: 1px solid var(--color-border);
+}
+
+.panel-specials .panel-header {
+    background: #fce4ec;
+    border-bottom-color: #f48fb1;
+}
+
+.panel-specials.collapsed {
+    width: 60px !important;
 }
 
 /* Drop target highlight */
@@ -781,6 +974,133 @@ cursor: grabbing;
 }
 
 /* ========================================
+   PRINT-ONLY HEADER (hidden in app, shown in preview/print)
+   ======================================== */
+.print-header {
+    display: none;
+}
+
+body.preview-mode .print-header {
+    display: flex !important;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 6px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #C4A77D;
+}
+
+/* Refined page border - subtle double-line frame in preview mode */
+body.preview-mode .calendar-container {
+    padding: 12px 0 0 0;
+    background: #fdf8f0;
+    min-height: 100vh;
+    border: none;
+    outline: none;
+    margin: 0;
+}
+
+body.preview-mode .print-logo {
+    width: 72px;
+    height: auto;
+    flex-shrink: 0;
+}
+
+body.preview-mode .print-header-text {
+    flex: 1;
+}
+
+body.preview-mode .print-school-name {
+    font-family: 'Crimson Text', Georgia, serif;
+    font-size: 13pt;
+    font-weight: 600;
+    color: #8B1A1A;
+    font-variant: small-caps;
+    letter-spacing: 2px;
+    display: block;
+    margin-bottom: 2px;
+}
+
+body.preview-mode .month-title {
+    font-family: 'Crimson Text', Georgia, serif;
+    font-size: 26pt;
+    font-weight: 700;
+    text-align: left;
+    margin: 0;
+    color: #8B1A1A;
+    line-height: 1.1;
+}
+
+body.preview-mode .verse-display {
+    margin: 4px auto 8px auto;
+    max-width: 90%;
+    padding: 4px 20px;
+}
+
+body.preview-mode .verse-text {
+    font-size: 34pt;
+    font-weight: 700;
+    color: #5a4a3a;
+    line-height: 1.3;
+    margin-bottom: 3px;
+    text-wrap: pretty;
+}
+
+/* Decorative gold quotation marks around the verse */
+body.preview-mode .verse-text::before {
+    content: "\201C";
+    font-family: 'Dancing Script', cursive;
+    font-size: 48pt;
+    color: #C4A77D;
+    line-height: 0;
+    vertical-align: -0.35em;
+    margin-right: 6px;
+    opacity: 0.7;
+}
+
+body.preview-mode .verse-text::after {
+    content: "\201D";
+    font-family: 'Dancing Script', cursive;
+    font-size: 48pt;
+    color: #C4A77D;
+    line-height: 0;
+    vertical-align: -0.35em;
+    margin-left: 6px;
+    opacity: 0.7;
+}
+
+body.preview-mode .verse-ref {
+    font-size: 11pt;
+    color: #8B1A1A;
+    letter-spacing: 1.5px;
+}
+
+/* Decorative gold divider between verse and grid */
+body.preview-mode .verse-display::after {
+    content: "\2766";
+    display: block;
+    font-size: 14pt;
+    color: #C4A77D;
+    opacity: 0.5;
+    margin-top: 6px;
+    letter-spacing: 8px;
+}
+
+/* Ornamental line accent on either side of the divider */
+body.preview-mode .calendar-header {
+    position: relative;
+}
+
+body.preview-mode .calendar-header::before {
+    content: "";
+    display: block;
+    width: 30%;
+    height: 1px;
+    background: linear-gradient(to right, transparent, #C4A77D, transparent);
+    margin: 0 auto 4px auto;
+    opacity: 0.4;
+}
+
+/* ========================================
    PREVIEW MODE
    ======================================== */
 body.preview-mode .no-print,
@@ -788,12 +1108,15 @@ body.preview-mode .ns-toggle {
     display: none !important;
 }
 
-body.preview-mode .calendar-container {
-    padding: 0;
+body.preview-mode {
+    background: #fdf8f0;
+    overflow: hidden;
 }
 
-body.preview-mode {
-    background: white;
+body.preview-mode .main-content {
+    height: 100vh;
+    display: block;
+    overflow-y: auto;
 }
 
 /* Exit preview button - only visible in preview */
@@ -807,6 +1130,103 @@ body.preview-mode #exitPreviewBtn {
     top: 20px;
     right: 20px;
     z-index: 300;
+}
+
+/* Calendar grid in preview mode - warm toned, full page */
+body.preview-mode .calendar-grid {
+    background: #e8ddd0;
+    border: 1px solid #e8ddd0;
+    border-radius: 4px;
+    overflow: visible;
+    grid-template-columns: 0.5fr 1.9fr 1.9fr 1.9fr 1.9fr 1.9fr 0.5fr;
+}
+
+body.preview-mode .day-header {
+    background: #8B1A1A;
+    color: #fdf8f0;
+    font-size: 9pt;
+    padding: 6px 2px;
+}
+
+body.preview-mode .day-cell {
+    background: #fffcf7;
+    border-bottom: 1px solid #e8ddd0;
+    min-height: 1.05in;
+    padding: 8px 10px;
+}
+
+body.preview-mode .day-cell.weekend {
+    background: #f5f0e8;
+}
+
+body.preview-mode .day-cell.no-school.weekday {
+    background: #faf3e0;
+    background-image: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 8px,
+        rgba(196, 167, 125, 0.08) 8px,
+        rgba(196, 167, 125, 0.08) 16px
+    );
+}
+
+body.preview-mode .day-special-event {
+    background: #faf3e0;
+    border-left: 3px solid #C4A77D;
+    color: #5a3e2b;
+    padding: 3px 8px;
+    font-size: 9pt;
+    margin-top: 5px;
+    border-radius: 0 3px 3px 0;
+}
+
+body.preview-mode .day-number {
+    color: #b8a89a;
+    font-size: 8pt;
+    margin-bottom: 3px;
+}
+
+body.preview-mode .day-entree {
+    color: #2c1810;
+    font-size: 10pt;
+    font-weight: 700;
+    margin-bottom: 2px;
+}
+
+body.preview-mode .day-content {
+    font-family: 'Open Sans', 'Segoe UI', sans-serif;
+    font-size: 9pt;
+    line-height: 1.4;
+    font-weight: 500;
+}
+
+body.preview-mode .day-sides {
+    color: #7a6b5d;
+    font-size: 8.5pt;
+}
+
+body.preview-mode .day-staple {
+    color: #7a6b5d;
+    font-size: 8pt;
+}
+
+body.preview-mode .day-special {
+    color: #8B1A1A;
+    font-size: 8.5pt;
+    font-weight: 600;
+    margin-top: 3px;
+    margin-bottom: 1px;
+    border-left: 3px solid #C4A77D;
+    padding-left: 6px;
+}
+
+body.preview-mode .day-special::before {
+    content: none;
+}
+
+body.preview-mode .clear-day-btn,
+body.preview-mode .ns-toggle {
+    display: none !important;
 }
 
 /* ========================================
@@ -824,16 +1244,41 @@ body.preview-mode #exitPreviewBtn {
         z-index: 50;
         height: 100%;
     }
-    
+
     .panel.collapsed {
         width: 40px;
     }
-    
+
     .panel-left {
         left: 0;
     }
-    
+
     .panel-right {
         right: 0;
+    }
+}
+
+/* ========================================
+   ERROR TOAST ANIMATIONS
+   ======================================== */
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    to {
+        transform: translateX(100%);
+        opacity: 0;
     }
 }

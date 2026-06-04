@@ -10,17 +10,18 @@ const Tiles = {
     dragOffsetY: 0,
     boundMouseMove: null,
     boundMouseUp: null,
+    undoStack: [],
 
     init() {
         this.renderLibraries();
-        this.setupDragEvents();
         this.setupAddButtons();
     },
 
     renderLibraries() {
-        this.renderGrid('entreeGrid', State.entreeTiles);
-        this.renderGrid('sideGrid', State.sideTiles);
-        this.renderGrid('specialGrid', State.specialEventTiles);
+        this.renderGrid(GridIds.ENTREE, State.entreeTiles);
+        this.renderGrid(GridIds.SIDE, State.sideTiles);
+        this.renderGrid(GridIds.SPECIALS, State.specialsTiles);
+        this.renderGrid(GridIds.SPECIAL_EVENT, State.specialEventTiles);
     },
 
     renderGrid(gridId, tiles) {
@@ -127,18 +128,28 @@ const Tiles = {
             if (date) {
                 const dayData = State.getDay(State.currentMonth, State.currentYear, date);
 
-                if (this.draggedTile.type === 'entree') {
+                if (this.draggedTile.type === TileTypes.ENTREE) {
                     dayData.entree = this.draggedTile.name;
-                } else if (this.draggedTile.type === 'side') {
+                } else if (this.draggedTile.type === TileTypes.SIDE) {
                     if (!dayData.sides.includes(this.draggedTile.name)) {
                         dayData.sides.push(this.draggedTile.name);
                     }
-                } else if (this.draggedTile.type === 'special') {
+                } else if (this.draggedTile.type === TileTypes.SPECIALS) {
+                    dayData.special = this.draggedTile.name;
+                } else if (this.draggedTile.type === TileTypes.SPECIAL_EVENT) {
                     dayData.specialEvent = this.draggedTile.name;
                 }
 
+                State.pushUndo();
                 State.setDay(State.currentMonth, State.currentYear, date, dayData);
-                Calendar.renderCalendar();
+                State.showSaved();
+                // Defensive: renderCalendar touches many DOM elements (grid, cells, labels);
+                // if any are missing (stale cached HTML), the app shouldn't lose the save.
+                try {
+                    Calendar.renderCalendar();
+                } catch (err) {
+                    console.error('Calendar.renderCalendar failed:', err);
+                }
             }
         }
 
@@ -159,70 +170,15 @@ const Tiles = {
         document.removeEventListener('mouseup', this.boundMouseUp);
     },
 
-    setupDragEvents() {
-        document.querySelectorAll('.tile-grid').forEach(grid => {
-            grid.addEventListener('dragover', (e) => this.handleGridDragOver(e));
-            grid.addEventListener('drop', (e) => this.handleGridDrop(e));
-        });
-    },
-
-    handleGridDragOver(e) {
-        e.preventDefault();
-        const grid = e.currentTarget;
-        const afterElement = this.getDragAfterElement(grid, e.clientY, e.clientX);
-        const draggable = document.querySelector('.tile.dragging');
-        
-        if (draggable && grid.contains(draggable)) {
-            if (afterElement) {
-                grid.insertBefore(draggable, afterElement);
-            } else {
-                grid.appendChild(draggable);
-            }
-        }
-    },
-
-    handleGridDrop(e) {
-        e.preventDefault();
-        const grid = e.currentTarget;
-        const draggedEl = document.querySelector('.tile.dragging');
-        
-        if (!draggedEl || !grid.contains(draggedEl)) return;
-
-        const newOrder = Array.from(grid.children).map(child => {
-            const id = child.dataset.tileId;
-            const type = child.dataset.tileType;
-            const name = child.textContent;
-            return { id, type, name };
-        });
-
-        const type = grid.id === 'entreeGrid' ? 'entree' : 'side';
-        State.reorderTiles(type, newOrder);
-    },
-
-    getDragAfterElement(container, y, x) {
-        const draggableElements = [...container.querySelectorAll('.tile:not(.dragging)')];
-        
-        return draggableElements.reduce((closest, child) => {
-            const box = child.getBoundingClientRect();
-            const offsetX = x - box.left - box.width / 2;
-            const offsetY = y - box.top - box.height / 2;
-            const offset = Math.abs(offsetX) + Math.abs(offsetY);
-            
-            if (offset < closest.offset) {
-                return { offset, element: child };
-            }
-            return closest;
-        }, { offset: Number.POSITIVE_INFINITY }).element;
-    },
-
     updateGridDensity() {
         const entreePanel = document.getElementById('entreePanel');
         const sidePanel = document.getElementById('sidePanel');
         const specialPanel = document.getElementById('specialPanel');
+        if (!entreePanel || !sidePanel || !specialPanel) return;
         
-        const entreeGrid = document.getElementById('entreeGrid');
-        const sideGrid = document.getElementById('sideGrid');
-        const specialGrid = document.getElementById('specialGrid');
+        const entreeGrid = document.getElementById(GridIds.ENTREE);
+        const sideGrid = document.getElementById(GridIds.SIDE);
+        const specialGrid = document.getElementById(GridIds.SPECIAL_EVENT);
 
         const compactEnabled = State.settings.compactGridEnabled;
 
@@ -246,13 +202,58 @@ const Tiles = {
         document.querySelectorAll('.add-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const type = btn.dataset.type;
-                this.addTile(type);
+                const panel = btn.closest('.panel');
+                this.showInlineAddInput(type, panel);
             });
         });
     },
 
-    addTile(type) {
-        const name = prompt(`Enter new ${type} name:`);
+    showInlineAddInput(type, panel) {
+        // Remove any existing inline input first
+        this.removeInlineAddInput();
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'inline-add-input';
+        input.placeholder = `New ${type} name...`;
+        input.style.cssText = 'width: 100%; padding: 6px 8px; border: 2px solid var(--color-accent); border-radius: 4px; font-size: 13px; margin-bottom: 6px;';
+
+        let committed = false;
+        const commitOnce = () => {
+            if (committed) return;
+            committed = true;
+            const name = input.value.trim();
+            this.removeInlineAddInput();
+            if (name) {
+                this.addTile(type, name);
+            }
+        };
+
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); commitOnce(); }
+            if (e.key === 'Escape') { committed = true; this.removeInlineAddInput(); }
+        });
+        input.addEventListener('blur', () => {
+            // Small delay so Enter keydown fires before blur commits
+            setTimeout(() => {
+                if (!committed && document.body.contains(input)) {
+                    commitOnce();
+                }
+            }, 150);
+        });
+
+        const content = panel.querySelector('.panel-content');
+        content.insertBefore(input, content.firstChild);
+        input.focus();
+    },
+
+    removeInlineAddInput() {
+        const existing = document.querySelector('.inline-add-input');
+        if (existing) existing.remove();
+    },
+
+    addTile(type, nameOverride) {
+        const name = nameOverride || '';
         if (!name || !name.trim()) return;
 
         const newTile = {
@@ -261,36 +262,130 @@ const Tiles = {
             type: type
         };
 
-        if (type === 'entree') {
+        if (type === TileTypes.ENTREE) {
+            const prev = [...State.entreeTiles];
             State.entreeTiles.push(newTile);
-            State.saveEntreeTiles();
-            this.renderGrid('entreeGrid', State.entreeTiles);
-        } else if (type === 'side') {
+            State.saveEntreeTiles(prev);
+            this.renderGrid(GridIds.ENTREE, State.entreeTiles);
+        } else if (type === TileTypes.SIDE) {
+            const prev = [...State.sideTiles];
             State.sideTiles.push(newTile);
-            State.saveSideTiles();
-            this.renderGrid('sideGrid', State.sideTiles);
-        } else if (type === 'special') {
+            State.saveSideTiles(prev);
+            this.renderGrid(GridIds.SIDE, State.sideTiles);
+        } else if (type === TileTypes.SPECIALS) {
+            const prev = [...State.specialsTiles];
+            State.specialsTiles.push(newTile);
+            State.saveSpecialsTiles(prev);
+            this.renderGrid(GridIds.SPECIALS, State.specialsTiles);
+        } else if (type === TileTypes.SPECIAL_EVENT) {
+            const prev = [...State.specialEventTiles];
             State.specialEventTiles.push(newTile);
-            State.saveSpecialEventTiles();
-            this.renderGrid('specialGrid', State.specialEventTiles);
+            State.saveSpecialEventTiles(prev);
+            this.renderGrid(GridIds.SPECIAL_EVENT, State.specialEventTiles);
         }
     },
 
     removeTile(tileId, type) {
         if (!confirm(`Remove this ${type}?`)) return;
 
-        if (type === 'entree') {
+        // Save state for undo
+        this.pushUndoState(type);
+
+        if (type === TileTypes.ENTREE) {
+            const prev = State.entreeTiles;
             State.entreeTiles = State.entreeTiles.filter(t => t.id !== tileId);
-            State.saveEntreeTiles();
-            this.renderGrid('entreeGrid', State.entreeTiles);
-        } else if (type === 'side') {
+            State.saveEntreeTiles(prev);
+            this.renderGrid(GridIds.ENTREE, State.entreeTiles);
+        } else if (type === TileTypes.SIDE) {
+            const prev = State.sideTiles;
             State.sideTiles = State.sideTiles.filter(t => t.id !== tileId);
-            State.saveSideTiles();
-            this.renderGrid('sideGrid', State.sideTiles);
-        } else if (type === 'special') {
+            State.saveSideTiles(prev);
+            this.renderGrid(GridIds.SIDE, State.sideTiles);
+        } else if (type === TileTypes.SPECIALS) {
+            const prev = State.specialsTiles;
+            State.specialsTiles = State.specialsTiles.filter(t => t.id !== tileId);
+            State.saveSpecialsTiles(prev);
+            this.renderGrid(GridIds.SPECIALS, State.specialsTiles);
+        } else if (type === TileTypes.SPECIAL_EVENT) {
+            const prev = State.specialEventTiles;
             State.specialEventTiles = State.specialEventTiles.filter(t => t.id !== tileId);
-            State.saveSpecialEventTiles();
-            this.renderGrid('specialGrid', State.specialEventTiles);
+            State.saveSpecialEventTiles(prev);
+            this.renderGrid(GridIds.SPECIAL_EVENT, State.specialEventTiles);
         }
+
+        this.showUndoButton();
+    },
+
+    pushUndoState(type) {
+        let tiles;
+        if (type === TileTypes.ENTREE) {
+            tiles = [...State.entreeTiles];
+        } else if (type === TileTypes.SIDE) {
+            tiles = [...State.sideTiles];
+        } else if (type === TileTypes.SPECIALS) {
+            tiles = [...State.specialsTiles];
+        } else if (type === TileTypes.SPECIAL_EVENT) {
+            tiles = [...State.specialEventTiles];
+        }
+
+        this.undoStack.push({ type, tiles });
+        // Keep only last 10 actions
+        if (this.undoStack.length > 10) {
+            this.undoStack.shift();
+        }
+    },
+
+    undo() {
+        if (this.undoStack.length === 0) return;
+
+        const lastState = this.undoStack.pop();
+        const { type, tiles } = lastState;
+
+        if (type === TileTypes.ENTREE) {
+            const prev = State.entreeTiles;
+            State.entreeTiles = tiles;
+            State.saveEntreeTiles(prev);
+            this.renderGrid(GridIds.ENTREE, State.entreeTiles);
+        } else if (type === TileTypes.SIDE) {
+            const prev = State.sideTiles;
+            State.sideTiles = tiles;
+            State.saveSideTiles(prev);
+            this.renderGrid(GridIds.SIDE, State.sideTiles);
+        } else if (type === TileTypes.SPECIALS) {
+            const prev = State.specialsTiles;
+            State.specialsTiles = tiles;
+            State.saveSpecialsTiles(prev);
+            this.renderGrid(GridIds.SPECIALS, State.specialsTiles);
+        } else if (type === TileTypes.SPECIAL_EVENT) {
+            const prev = State.specialEventTiles;
+            State.specialEventTiles = tiles;
+            State.saveSpecialEventTiles(prev);
+            this.renderGrid(GridIds.SPECIAL_EVENT, State.specialEventTiles);
+        }
+
+        if (this.undoStack.length === 0) {
+            this.hideUndoButton();
+        }
+    },
+
+    showUndoButton() {
+        let undoBtn = document.getElementById('undoBtn');
+        if (!undoBtn) {
+            undoBtn = document.createElement('button');
+            undoBtn.id = 'undoBtn';
+            undoBtn.className = 'btn btn-secondary';
+            undoBtn.textContent = 'Undo';
+            undoBtn.style.position = 'fixed';
+            undoBtn.style.bottom = '20px';
+            undoBtn.style.left = '20px';
+            undoBtn.style.zIndex = '1000';
+            undoBtn.addEventListener('click', () => this.undo());
+            document.body.appendChild(undoBtn);
+        }
+    },
+
+    hideUndoButton() {
+        const undoBtn = document.getElementById('undoBtn');
+        if (undoBtn) undoBtn.remove();
     }
 };

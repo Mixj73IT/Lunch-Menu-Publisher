@@ -12,12 +12,22 @@ const App = {
         Settings.init();
         PanelCollapse.init();
         FactsExport.init();
-        EmailExport.init();
+
+        // EmailExport may not be available in browser (Tauri-only module)
+        try {
+            if (typeof EmailExport !== 'undefined') {
+                EmailExport.init();
+            }
+        } catch (e) {
+            console.warn('EmailExport not available (expected in browser):', e);
+        }
+
+        // Load Bible data in parallel (don't await - let it load in background)
+        BibleData.load();
 
         this.setupPreviewMode();
         this.setDefaultVerse();
-
-        await BibleData.load();
+        this.setupKeyboardShortcuts();
 
         console.log('Lunch Menu Publisher initialized');
     },
@@ -25,10 +35,20 @@ const App = {
     setupPreviewMode() {
         const previewBtn = document.getElementById('previewBtn');
         
-        previewBtn.addEventListener('click', () => {
-            document.body.classList.add('preview-mode');
-            this.addExitPreviewButton();
-        });
+        if (previewBtn) {
+            previewBtn.addEventListener('click', () => {
+                document.body.classList.add('preview-mode');
+                this.addExitPreviewButton();
+            });
+        }
+
+        // Copy from previous month
+        const copyBtn = document.getElementById('copyPrevMonthBtn');
+        if (copyBtn) {
+            copyBtn.addEventListener('click', () => {
+                Calendar.copyFromPreviousMonth();
+            });
+        }
     },
 
     addExitPreviewButton() {
@@ -41,9 +61,23 @@ const App = {
         btn.addEventListener('click', () => {
             document.body.classList.remove('preview-mode');
             btn.remove();
+            // Remove print button too
+            const printBtn = document.getElementById('printPreviewBtn');
+            if (printBtn) printBtn.remove();
         });
 
         document.body.appendChild(btn);
+
+        // Also add a Print button in preview mode
+        const printBtn = document.createElement('button');
+        printBtn.id = 'printPreviewBtn';
+        printBtn.className = 'btn btn-primary';
+        printBtn.textContent = 'Print';
+        printBtn.style.right = '140px';
+        printBtn.addEventListener('click', () => {
+            window.print();
+        });
+        document.body.appendChild(printBtn);
     },
 
     setDefaultVerse() {
@@ -59,6 +93,42 @@ const App = {
                 Calendar.renderVerse();
             }
         }
+    },
+
+    setupKeyboardShortcuts() {
+        document.addEventListener('keydown', (e) => {
+            // Ctrl+Z = Undo
+            if (e.ctrlKey && e.key === 'z' && !e.target.closest('input, textarea, select')) {
+                e.preventDefault();
+                if (State.undoStack.length > 0) {
+                    if (State.performUndo()) {
+                        Calendar.render();
+                        Tiles.renderLibraries();
+                        State.showSaved();
+                    }
+                } else if (Tiles.undoStack.length > 0) {
+                    Tiles.undo();
+                }
+            }
+            // Ctrl+Arrow = Month navigation
+            if (e.ctrlKey && e.key === 'ArrowLeft' && !e.target.closest('input, textarea, select')) {
+                e.preventDefault();
+                Calendar.changeMonth(-1);
+            }
+            if (e.ctrlKey && e.key === 'ArrowRight' && !e.target.closest('input, textarea, select')) {
+                e.preventDefault();
+                Calendar.changeMonth(1);
+            }
+            // Ctrl+P = Print preview
+            if (e.ctrlKey && e.key === 'p' && !e.target.closest('input, textarea, select')) {
+                e.preventDefault();
+                if (!document.body.classList.contains('preview-mode')) {
+                    document.body.classList.add('preview-mode');
+                    this.addExitPreviewButton();
+                }
+                setTimeout(() => window.print(), 300);
+            }
+        });
     }
 };
 
@@ -76,4 +146,6 @@ window.addEventListener('afterprint', () => {
     document.body.classList.remove('preview-mode');
     const exitBtn = document.getElementById('exitPreviewBtn');
     if (exitBtn) exitBtn.remove();
+    const printBtn = document.getElementById('printPreviewBtn');
+    if (printBtn) printBtn.remove();
 });

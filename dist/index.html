@@ -7,8 +7,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;600;700&family=Dancing+Script:wght@400;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/app.css">
-    <link rel="stylesheet" href="css/pdf.css" media="print">
+    <link rel="stylesheet" href="css/app.css?v=2">
+    <link rel="stylesheet" href="css/pdf.css?v=2" media="print">
 </head>
 <body>
     <div id="app">
@@ -42,14 +42,29 @@
             <aside class="panel panel-left no-print" id="entreePanel">
                 <div class="panel-header">
                     <div class="panel-header-actions">
-                        <button class="add-btn" data-type="entree" title="Add new entrée">+</button>
-                        <button class="collapse-btn" data-panel="entree">&lt;</button>
+                        <button class="add-btn" data-type="entree" title="Add new entrée"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="8" y1="3" x2="8" y2="13"/><line x1="3" y1="8" x2="13" y2="8"/></svg></button>
+                        <button class="collapse-btn" data-panel="entree"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6,3 11,8 6,13"/></svg></button>
                     </div>
                     <h2>Entrées</h2>
                 </div>
                 <div class="panel-content">
                     <div class="tile-grid" id="entreeGrid" data-columns="2">
                         <!-- Tiles populated by JS -->
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Specials Panel (extra-purchase food, collapsed by default) -->
+            <aside class="panel panel-left panel-specials no-print collapsed" id="specialsPanel">
+                <div class="panel-header">
+                    <div class="panel-header-actions">
+                        <button class="add-btn" data-type="specials" title="Add new special"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="8" y1="3" x2="8" y2="13"/><line x1="3" y1="8" x2="13" y2="8"/></svg></button>
+                        <button class="collapse-btn" data-panel="specials"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6,3 11,8 6,13"/></svg></button>
+                    </div>
+                    <h2>Specials</h2>
+                </div>
+                <div class="panel-content">
+                    <div class="tile-grid" id="specialsGrid" data-columns="2">
                     </div>
                 </div>
             </aside>
@@ -73,8 +88,8 @@
             <aside class="panel panel-right no-print" id="sidePanel">
                 <div class="panel-header">
                     <div class="panel-header-actions">
-                        <button class="add-btn" data-type="side" title="Add new side">+</button>
-                        <button class="collapse-btn" data-panel="side">&gt;</button>
+                        <button class="add-btn" data-type="side" title="Add new side"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="8" y1="3" x2="8" y2="13"/><line x1="3" y1="8" x2="13" y2="8"/></svg></button>
+                        <button class="collapse-btn" data-panel="side"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6,3 11,8 6,13"/></svg></button>
                     </div>
                     <h2>Sides</h2>
                 </div>
@@ -89,8 +104,8 @@
             <aside class="panel panel-special no-print collapsed" id="specialPanel">
                 <div class="panel-header">
                     <div class="panel-header-actions">
-                        <button class="add-btn" data-type="special" title="Add new special event">+</button>
-                        <button class="collapse-btn" data-panel="special">∨</button>
+                        <button class="add-btn" data-type="specialEvent" title="Add new special event"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="8" y1="3" x2="8" y2="13"/><line x1="3" y1="8" x2="13" y2="8"/></svg></button>
+                        <button class="collapse-btn" data-panel="special"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6,3 11,8 6,13"/></svg></button>
                     </div>
                     <h2>Special Events</h2>
                 </div>
@@ -129,6 +144,12 @@
                     <div class="setting-item">
                         <label for="txtEmailInput">TXT Email Recipient:</label>
                         <input type="email" id="txtEmailInput" placeholder="email@example.com">
+                    </div>
+                    <hr>
+                    <div class="setting-item">
+                        <button id="exportDataBtn" class="btn btn-secondary">Export All Data</button>
+                        <button id="importDataBtn" class="btn btn-secondary">Import Data</button>
+                        <input type="file" id="importDataFile" accept=".json" style="display:none;">
                     </div>
                 </div>
             </div>
@@ -183,9 +204,9 @@
     <script src="js/calendar.js"></script>
     <script src="js/editing.js"></script>
     <script src="js/verses.js"></script>
-    <script src="js/settings.js"></script>
+    <script src="js/settings.js?v=2"></script>
     <script src="js/facts-export.js"></script>
     <script src="js/email-export.js"></script>
-    <script src="js/app.js"></script>
+    <script src="js/app.js?v=2"></script>
 </body>
 </html>

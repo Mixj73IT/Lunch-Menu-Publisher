@@ -1,6 +1,6 @@
 /* ========================================
    LUNCH MENU PUBLISHER - PDF STYLES
-   Print-specific styles for professional output
+   Warm, parent-facing print design
    ======================================== */
 
 @media print {
@@ -12,14 +12,20 @@
     .collapse-btn,
     .day-edit-input,
     .no-school-toggle,
-    #exitPreviewBtn {
+    #exitPreviewBtn,
+    #selectVerseBtn {
         display: none !important;
     }
 
-    /* Page setup */
+    /* Show print-only elements */
+    .print-header {
+        display: flex !important;
+    }
+
+    /* Page setup - tighter margins to fill the page */
     @page {
         size: letter landscape;
-        margin: 0;
+        margin: 0.25in 0.35in 0.2in 0.35in;
     }
 
     @page :first {
@@ -27,10 +33,11 @@
     }
 
     body {
-        background: white !important;
+        background: #fdf8f0 !important;
         font-size: 10pt;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
+        color: #2c1810;
     }
 
     /* Layout adjustments */
@@ -45,185 +52,269 @@
         padding: 0;
         width: 100%;
         max-width: 100%;
-        outline: none !important;
-        border: none !important;
+        outline: 1px solid #e8ddd0 !important;
+        outline-offset: 6px !important;
+        border: 1px solid #e8ddd0 !important;
+        background: #fdf8f0 !important;
+    }
+
+    /* ========================================
+       PRINT HEADER - LOGO + SCHOOL NAME
+       ======================================== */
+    .print-header {
+        display: flex !important;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 6px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #C4A77D;
+    }
+
+    .print-logo {
+        width: 72px;
+        height: auto;
+        flex-shrink: 0;
+    }
+
+    .print-header-text {
+        flex: 1;
+    }
+
+    .print-school-name {
+        font-family: 'Crimson Text', Georgia, 'Times New Roman', serif !important;
+        font-size: 13pt !important;
+        font-weight: 600 !important;
+        color: #8B1A1A !important;
+        font-variant: small-caps !important;
+        letter-spacing: 2px !important;
+        display: block !important;
+        margin-bottom: 2px !important;
     }
 
     /* ========================================
        TYPOGRAPHY - HIERARCHY
        ======================================== */
     
-    /* Month title - Serif, prominent */
+    /* Month title - Serif, warm burgundy */
     .month-title {
         font-family: 'Crimson Text', Georgia, 'Times New Roman', serif !important;
-        font-size: 28pt !important;
+        font-size: 26pt !important;
         font-weight: 700 !important;
-        text-align: center !important;
-        margin-bottom: 0.15in !important;
-        color: #000 !important;
+        text-align: left !important;
+        margin: 0 !important;
+        color: #8B1A1A !important;
+        line-height: 1.1 !important;
     }
 
-    /* Verse display - Simplified styling to save space */
+    /* Verse display - Bigger, more prominent */
     .verse-display {
         text-align: center !important;
-        margin: 0 auto 0.15in auto !important;
-        max-width: 75% !important;
-        padding: 6pt 16pt !important;
+        margin: 4px auto 8px auto !important;
+        max-width: 90% !important;
+        padding: 4px 20px !important;
         background: none !important;
         border: none !important;
     }
 
     .verse-text {
         font-family: 'Dancing Script', cursive !important;
-        font-size: 20pt !important;
+        font-size: 34pt !important;
+        font-weight: 700 !important;
         line-height: 1.3 !important;
-        color: #2c3e50 !important;
-        margin-bottom: 4pt !important;
+        color: #5a4a3a !important;
+        margin-bottom: 3px !important;
+        text-wrap: pretty !important;
+    }
+
+    /* Decorative gold quotation marks around the verse */
+    .verse-text::before {
+        content: "\201C" !important;
+        font-family: 'Dancing Script', cursive !important;
+        font-size: 48pt !important;
+        color: #C4A77D !important;
+        line-height: 0 !important;
+        vertical-align: -0.35em !important;
+        margin-right: 6px !important;
+        opacity: 0.7 !important;
+    }
+
+    .verse-text::after {
+        content: "\201D" !important;
+        font-family: 'Dancing Script', cursive !important;
+        font-size: 48pt !important;
+        color: #C4A77D !important;
+        line-height: 0 !important;
+        vertical-align: -0.35em !important;
+        margin-left: 6px !important;
+        opacity: 0.7 !important;
     }
 
     .verse-ref {
         font-family: 'Crimson Text', Georgia, serif !important;
         font-variant: small-caps !important;
-        font-size: 10pt !important;
-        color: #6b7280 !important;
-        letter-spacing: 1px !important;
+        font-size: 11pt !important;
+        color: #8B1A1A !important;
+        letter-spacing: 1.5px !important;
         display: inline-block !important;
     }
 
+    /* Decorative gold divider between verse and grid */
+    .verse-display::after {
+        content: "\2766" !important;
+        display: block !important;
+        font-size: 14pt !important;
+        color: #C4A77D !important;
+        opacity: 0.5 !important;
+        margin-top: 6px !important;
+        letter-spacing: 8px !important;
+    }
+
+    /* Ornamental line accent above verse area */
+    .calendar-header::before {
+        content: "" !important;
+        display: block !important;
+        width: 30% !important;
+        height: 1px !important;
+        background: linear-gradient(to right, transparent, #C4A77D, transparent) !important;
+        margin: 0 auto 4px auto !important;
+        opacity: 0.4 !important;
+    }
+
     /* ========================================
-       CALENDAR GRID - PRINT OPTIMIZED
+       CALENDAR GRID - WARM DESIGN
        ======================================== */
     
     .calendar-grid {
         display: grid !important;
-        grid-template-columns: 1fr 2fr 2fr 2fr 2fr 2fr 1fr !important;
-        gap: 0 !important;
-        background: transparent !important;
-        border: none !important;
-        width: 100% !important;
+        grid-template-columns: 0.5fr 1.9fr 1.9fr 1.9fr 1.9fr 1.9fr 0.5fr !important;
+        gap: 1px !important;
+        background: #e8ddd0 !important;
+        border: 1px solid #e8ddd0 !important;
+        border-radius: 4px !important;
+        overflow: visible !important;
     }
 
-    /* Day headers - Remove vertical borders, reduced height */
+    /* Day headers - Burgundy with gold accent */
     .day-header {
-        background: #4a4a4a !important;
-        color: white !important;
-        padding: 4px 2px !important;
+        background: #8B1A1A !important;
+        color: #fdf8f0 !important;
+        padding: 6px 2px !important;
         text-align: center !important;
-        font-weight: 600 !important;
-        font-size: 8pt !important;
-        font-family: 'Open Sans', sans-serif !important;
+        font-weight: 700 !important;
+        font-size: 9pt !important;
+        font-family: 'Open Sans', 'Segoe UI', sans-serif !important;
         border: none !important;
-        border-bottom: 2px solid #666 !important;
+        letter-spacing: 1px !important;
+        text-transform: uppercase !important;
     }
 
-    /* Day cells - Reduced height and padding */
+    /* Day cells - Taller to fill the page */
     .day-cell {
-        background: white !important;
-        min-height: 0.55in !important;
-        padding: 4pt !important;
+        background: #fffcf7 !important;
+        min-height: 1.05in !important;
+        padding: 6px 8px !important;
         position: relative !important;
         page-break-inside: avoid !important;
         border: none !important;
-        border-bottom: 1px solid #e0e0e0 !important;
+        border-bottom: 1px solid #e8ddd0 !important;
     }
 
-    /* Day numbers - Subtle, light gray, uppercase */
+    /* Day numbers - Warm gray, uppercase */
     .day-number {
-        font-family: 'Open Sans', sans-serif !important;
-        font-weight: 400 !important;
+        font-family: 'Open Sans', 'Segoe UI', sans-serif !important;
+        font-weight: 600 !important;
         font-size: 8pt !important;
-        color: #999 !important;
+        color: #b8a89a !important;
         margin-bottom: 3px !important;
         display: block !important;
         text-transform: uppercase !important;
-        letter-spacing: 0.5px !important;
+        letter-spacing: 0.8px !important;
     }
 
     /* Day content - Elegant serif typography */
     .day-content {
         font-family: 'Crimson Text', Georgia, serif !important;
-        font-size: 8pt !important;
-        line-height: 1.2 !important;
+        font-size: 9pt !important;
+        line-height: 1.3 !important;
     }
 
     .day-entree {
         font-family: 'Crimson Text', Georgia, serif !important;
         font-weight: 700 !important;
-        font-size: 9pt !important;
-        margin-bottom: 1px !important;
-        color: #000 !important;
+        font-size: 10pt !important;
+        margin-bottom: 2px !important;
+        color: #2c1810 !important;
     }
 
     .day-sides {
         font-family: 'Crimson Text', Georgia, serif !important;
         font-style: italic !important;
-        font-size: 7pt !important;
-        color: #555 !important;
+        font-size: 8.5pt !important;
+        color: #7a6b5d !important;
+        line-height: 1.3 !important;
     }
 
-    /* Special events - Distinct styling for fundraisers/sales */
+    /* Milk staple */
+    .day-staple {
+        font-family: 'Crimson Text', Georgia, serif !important;
+        font-style: italic !important;
+        font-size: 8pt !important;
+        color: #7a6b5d !important;
+        margin-top: 2px !important;
+        letter-spacing: 0.3px !important;
+    }
+
+    /* Specials (extra-purchase food) - subtle gold accent */
+    .day-special {
+        font-family: 'Crimson Text', Georgia, serif !important;
+        font-weight: 600 !important;
+        font-size: 8.5pt !important;
+        color: #8B1A1A !important;
+        margin-top: 3px !important;
+        margin-bottom: 1px !important;
+        border-left: 3px solid #C4A77D !important;
+        padding-left: 6px !important;
+    }
+
+    .day-special::before {
+        content: none !important;
+    }
+
+    /* Special events - Gold accent left border */
     .day-special-event {
-        color: #5d4e37 !important;
+        color: #5a3e2b !important;
         font-weight: 700 !important;
         font-variant: small-caps !important;
-        font-size: 9pt !important;
-        margin-top: 6px !important;
-        background: #f5f0e6 !important;
-        padding: 4px 8px !important;
-        border-radius: 3px !important;
-        border-left: 3px solid #c4a77d !important;
+        font-size: 8pt !important;
+        margin-top: 5px !important;
+        background: #faf3e0 !important;
+        padding: 3px 8px !important;
+        border-left: 3px solid #C4A77D !important;
+        letter-spacing: 0.5px !important;
     }
 
     /* ========================================
        NO SCHOOL / WEEKEND STATES
-       Luminance-based for B&W printing
+       Warm, muted tones for office printing
        ======================================== */
     
     .day-cell.weekend {
-        background: #8a8a8a !important;
+        background: #f5f0e8 !important;
     }
 
     .day-cell.weekend .day-number {
-        color: white !important;
+        color: #b8a89a !important;
     }
 
-    .day-cell.no-school {
-        background: #555 !important;
-    }
-
-    .day-cell.no-school .day-number {
-        color: white !important;
-    }
-
-    .day-cell.no-school.weekday::after {
-        display: none !important;
-    }
-
-    .day-cell.no-school .no-school-text {
-        content: "NO SCHOOL" !important;
-        position: absolute !important;
-        top: 50% !important;
-        left: 50% !important;
-        transform: translate(-50%, -50%) !important;
-        color: white !important;
-        font-variant: small-caps !important;
-        font-size: 8pt !important;
-        letter-spacing: 1px !important;
-        font-family: 'Crimson Text', serif !important;
-    }
-
-    .day-cell.no-school.weekend .no-school-text {
-        display: none !important;
-    }
-
+    /* Weekday NO SCHOOL - warm amber with subtle pattern */
     .day-cell.no-school.weekday {
-        background: #fff3cd !important;
+        background: #faf3e0 !important;
         background-image: repeating-linear-gradient(
             45deg,
             transparent,
-            transparent 10px,
-            rgba(0, 0, 0, 0.05) 10px,
-            rgba(0, 0, 0, 0.05) 20px
+            transparent 8px,
+            rgba(196, 167, 125, 0.08) 8px,
+            rgba(196, 167, 125, 0.08) 16px
         ) !important;
     }
 
@@ -231,7 +322,26 @@
         display: none !important;
     }
 
-    .day-cell.no-school .day-content {
+    .day-cell.no-school.weekday .day-content {
+        display: none !important;
+    }
+
+    .day-cell.no-school .no-school-text {
+        font-family: 'Crimson Text', Georgia, serif !important;
+        font-variant: small-caps !important;
+        font-size: 8pt !important;
+        letter-spacing: 2px !important;
+        font-weight: 700 !important;
+        color: #8B1A1A !important;
+        position: absolute !important;
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        pointer-events: none !important;
+        z-index: 10 !important;
+    }
+
+    .day-cell.no-school.weekend .no-school-text {
         display: none !important;
     }
 
@@ -239,7 +349,6 @@
        PRINT-SPECIFIC RULES
        ======================================== */
     
-    /* Ensure clean breaks */
     .calendar-header {
         page-break-after: avoid !important;
     }
@@ -251,19 +360,39 @@
         outline: none !important;
     }
 
-    /* Ensure text is always black for readability */
+    /* Ensure text is always readable */
     * {
-        color: #000 !important;
+        color: #2c1810 !important;
     }
 
     .day-sides,
+    .day-staple,
     .verse-ref {
-        color: #444 !important;
+        color: #7a6b5d !important;
     }
 
-    .day-cell.weekend .day-number,
-    .day-cell.no-school .day-number {
-        color: white !important;
+    .day-number {
+        color: #b8a89a !important;
+    }
+
+    .day-entree {
+        color: #2c1810 !important;
+    }
+
+    .verse-text {
+        color: #5a4a3a !important;
+    }
+
+    .print-school-name {
+        color: #8B1A1A !important;
+    }
+
+    .month-title {
+        color: #8B1A1A !important;
+    }
+
+    .day-header {
+        color: #fdf8f0 !important;
     }
 
     /* Hide any remaining edit indicators */
@@ -273,18 +402,13 @@
         all: unset !important;
     }
 
-    /* Day staple styling for milk display */
-    .day-staple {
-        font-family: 'Crimson Text', Georgia, serif !important;
-        font-style: italic !important;
-        font-size: 7pt !important;
-        color: #555 !important;
-        margin-top: 1px !important;
-    }
-
     /* Prevent page breaks within calendar */
     .calendar-container {
         page-break-inside: avoid !important;
     }
 
+    /* Hide VS toggle */
+    .ns-toggle {
+        display: none !important;
+    }
 }

@@ -1,6 +1,6 @@
 # Lunch Menu Publisher
 
-A desktop application for schools to create and manage monthly lunch menus with verse displays, landscape calendar layout, NO SCHOOL day management, and email export functionality.
+A desktop application for schools to create and manage monthly lunch menus with verse displays, landscape calendar layout, NO SCHOOL day management, email export, data backup/restore, and warm print-friendly PDF output.
 
 ## Features
 
@@ -8,10 +8,14 @@ A desktop application for schools to create and manage monthly lunch menus with 
 - **Bible Verse Integration**: Select and display curated Bible verses or choose from the full KJV Bible
 - **Landscape Calendar Layout**: Optimized landscape orientation for PDF printing
 - **NO SCHOOL Day Management**: Mark weekdays as NO SCHOOL with visual indicators
-- **Tile-Based Menu Items**: Drag and drop entree, side, and special event tiles
+- **Tile-Based Menu Items**: Drag and drop entree, side, specials, and special event tiles
+- **Inline Add Input**: Click the blue + button on any panel to type a new tile name directly in the panel (replaces `prompt()`)
 - **Daily Milk Display**: Milk automatically displays on each school day in the calendar and PDF
 - **FACTS Export**: Generate text exports compatible with FACTS school management system
 - **Email Export**: Send PDF and TXT exports via email with pre-filled recipients
+- **Data Backup & Restore**: Export all data as JSON for backup; import from backup files with validation
+- **Undo System**: Undo calendar edits and tile library changes
+- **Warm Print Design**: Burgundy and gold toned PDF output with school logo header and decorative verse display
 - **Tauri Desktop App**: Cross-platform desktop application (Windows, macOS, Linux)
 - **Web Version**: Browser-based version for quick access
 
@@ -77,13 +81,23 @@ npm run dev
 
 ### Settings
 
-Access settings by clicking the settings icon (⚙) in the header:
+Access settings by clicking the gear icon (⚙) in the header:
 
 - **Enable 3-column tiles**: Compact tile layout when opposite panel is collapsed
 - **Show verses on PDF**: Toggle verse display in PDF exports
 - **Enable advanced verse lookup**: Allow selecting from full KJV Bible
 - **PDF Email Recipient**: Default email address for PDF exports
 - **TXT Email Recipient**: Default email address for TXT exports
+- **Export All Data**: Download a complete JSON backup of all menus, tiles, and settings
+- **Import Data**: Restore from a previously exported JSON backup file
+
+### Data Backup
+
+Use the Export/Import buttons in Settings to back up and restore all data:
+
+1. Click **Export All Data** to download a `.json` file containing all tiles, menus, settings, and email recipients
+2. Click **Import Data** and select a `.json` backup file to restore. The import validates structure before accepting data
+3. The page automatically reloads after a successful import
 
 ### Email Export
 
@@ -145,8 +159,12 @@ Additional documentation is available in the following files:
 1. Modify the relevant JavaScript module in `js/`
 2. Update corresponding styles in `css/`
 3. Add new data files to `data/` if needed
-4. Test in web version first (`python -m http.server 8080`)
-5. Test in Tauri desktop app (`npm run dev`)
+4. Use the shared constants in `state.js` when working with tile types or grid IDs:
+   - `TileTypes` — ENTREE, SIDE, SPECIALS, SPECIAL_EVENT
+   - `GridIds` — ENTREE, SIDE, SPECIALS, SPECIAL_EVENT
+5. Null-guard all `getElementById` calls before calling `.addEventListener`
+6. Test in web version first (`python -m http.server 8080` or `npx serve dist`)
+7. Test in Tauri desktop app (`npm run dev`)
 
 ### State Management
 
@@ -154,12 +172,15 @@ Application state is managed in `js/state.js` and persisted to localStorage:
 
 - `lunchMenu_entreeTiles` - Entree tile order
 - `lunchMenu_sideTiles` - Side tile order
+- `lunchMenu_specialsTiles` - Specials (extra-purchase food) tile order
 - `lunchMenu_specialEventTiles` - Special event tile order
 - `lunchMenu_menus` - Menu data for each month
 - `lunchMenu_settings` - Application settings
 - `lunchMenu_currentMonth` - Currently selected month
 - `lunchMenu_pdfEmail` - Default PDF email recipient
 - `lunchMenu_txtEmail` - Default TXT email recipient
+
+All save methods in `state.js` follow a **rollback pattern**: they accept an optional `prev` parameter and revert in-memory state if localStorage persistence fails (e.g., quota full).
 
 ## Browser Compatibility
 

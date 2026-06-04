@@ -58,10 +58,12 @@ const Editing = {
         const input = cell.querySelector('.day-edit-input');
         const value = input.value.trim();
 
+        State.pushUndo();
         let dayData = State.getDay(State.currentMonth, State.currentYear, date);
 
         dayData.entree = '';
         dayData.sides = [];
+        dayData.special = '';
         dayData.specialEvent = '';
 
         if (value !== '') {
@@ -73,11 +75,16 @@ const Editing = {
             }
 
             if (parts.length > 2) {
-                dayData.specialEvent = parts[2].trim();
+                dayData.special = parts[2].trim();
+            }
+
+            if (parts.length > 3) {
+                dayData.specialEvent = parts[3].trim();
             }
         }
 
         State.setDay(State.currentMonth, State.currentYear, date, dayData);
+        State.showSaved();
         cell.classList.remove('editing');
         Calendar.renderCalendar();
     }
