@@ -24,7 +24,7 @@
 
 The **Lunch Menu Publisher** is a Tauri v1 desktop application with a vanilla JavaScript frontend (no framework, no bundler) and a Rust backend for SMTP email. It lets a cafeteria manager at a Christian school create monthly lunch menus, optionally add a Bible verse, and export to PDF, plain text, or email.
 
-A separate **Python script** (in a different project directory) fetches the emailed menu via IMAP and generates digital signage slides for BrightAuthor HD224 boxes.
+The app is self-contained: all menu creation, PDF generation, and text export happen within the desktop application. Email exports are sent directly to configured recipients via SMTP.
 
 ### Codebase Pain Points
 
@@ -650,10 +650,10 @@ Use **Zustand** over Redux or Context:
 - Snapshot-based undo is trivially implemented with Zustand middleware
 - Command pattern is overkill here
 
-### ✅ Signage Integration: Deferred until Python script details available
+### ✅ Signage Integration: Deferred until image generation pipeline is defined
 
 - Stub the `signage.rs` interface in Phase 4 with a placeholder command
-- Fill in the actual image generation once the Python script's template format, resolution, and file naming convention are shared
+- Fill in the actual image generation once the template format, resolution, and file naming convention are defined
 
 ---
 
@@ -783,7 +783,7 @@ Based on `SCS_Menu_System.md` document provided by the user:
 ### BrightSign HD224 Details
 
 - **Three units** throughout the building (hallways, cafeteria)
-- **Current workflow**: Python generates JPEGs → BrightAuthor publishes to SD card → Insert into HD224
+- **Current workflow**: App generates JPEGs → BrightAuthor publishes to SD card → Insert into HD224
 - **Target workflow**: App generates JPEGs → syncs to Google Drive → BrightAuthor reads from Drive → publish
 - **Resolution**: 1920×1080 (standard HD)
 - **Format**: JPEG

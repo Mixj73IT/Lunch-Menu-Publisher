@@ -1,22 +1,22 @@
-# Lunch Program: User Guide
+# Lunch Menu Publisher: User Guide
 
 ## 1. Overview
 
-Welcome to the Lunch Program! This application helps you manage and publish your monthly lunch menus. It works in conjunction with a separate script (the "Lunch Menu Script") to automatically generate digital signage slides for your televisions.
+Welcome to the **Lunch Menu Publisher**! This application helps you create, manage, and publish monthly lunch menus for your school. All data is stored locally on your computer, and the app works entirely offline.
 
 **How it works:**
-1.  You use this **Lunch Program** application to create and finalize your monthly lunch menu.
-2.  Once ready, you can export the menu data, and this application will **automatically send it via email**.
-3.  The **Lunch Menu Script** (running separately) monitors for these emails, extracts the menu information, and then creates daily "photo" slides suitable for digital signage systems like BrightAuthor for HD224 boxes.
+1.  You use the **Lunch Menu Publisher** application to create and finalize your monthly lunch menu.
+2.  Once ready, you can print a professional PDF, copy a plain text export, or email the menu directly to recipients.
+3.  All menus, tiles, and settings are saved automatically to your computer.
 
 ## 2. Installation
 
-To install the Lunch Program desktop application:
+To install the Lunch Menu Publisher desktop application:
 
 *   **Windows**: Download and run the latest `Lunch_Menu_Publisher_Setup_X.X.X.exe` installer from the official distribution point.
 *   Follow the on-screen instructions to complete the installation.
 
-## 3. How to Use the Lunch Program
+## 3. How to Use the Lunch Menu Publisher
 
 ### 3.1. Generating a Menu
 
@@ -55,16 +55,16 @@ Once your menu is complete:
 3. Click **Print** in preview mode to send to your printer
 4. Click **Exit Preview** to return to editing
 
-### 3.3. Sending the Menu via Email
+### 3.3. Exporting the Menu
 
 Once your menu is complete and ready for publishing:
 
-1. Click the **"Email TXT Export"** button to send menu data for processing
-2. Click the **"Email PDF"** button to send a printable PDF version
-3. This will package the current month's menu data and send it as an email attachment
-4. You should receive a confirmation message if the email was sent successfully
+1. Click the **"Text Export"** button to open a plain text copy of the menu. You can copy this and paste it into any school information system.
+2. Click the **"Email TXT"** button to send the plain text export directly to a recipient via email.
+3. Click the **"Email PDF"** button to send a printable PDF version via email.
+4. You should receive a confirmation message if the email was sent successfully.
 
-**Important**: This application sends the menu data to a pre-configured email address. Ensure this is set up correctly in the application's Settings.
+**Important**: Email delivery requires the desktop app to be configured with SMTP credentials. If you are an administrator, see the `DEVELOPER_GUIDE.md` for setup instructions.
 
 ### 3.4. Important Settings
 
@@ -75,17 +75,7 @@ Access Settings by clicking the gear icon (⚙) in the top-right corner of the h
 *   **Verse Options**: Toggle whether verses appear on the PDF, and enable advanced Bible lookup
 *   **Compact Grid**: Toggle 3-column tile layout when opposite panels are collapsed
 
-## 4. How the Lunch Menu Script Works (for your understanding)
-
-The **Lunch Menu Script** is an automated tool that runs in the background. It periodically checks the designated email inbox for new menu exports sent from this Lunch Program application.
-
-*   When it finds a new menu email, it automatically extracts the menu data.
-*   It then processes this data to create individual graphic slides for each school day of the month.
-*   These slides are then made available for your digital signage system (e.g., BrightAuthor) to display on your televisions.
-
-This entire process is designed to be automatic once the initial setup is done, streamlining the publishing of your lunch menus to your digital displays.
-
-## 5. Data Backup
+## 4. Data Backup
 
 It is recommended to regularly back up your menu data:
 
@@ -94,17 +84,14 @@ It is recommended to regularly back up your menu data:
 3.  To restore, click **Import Data** and select your backup file
 4.  The application will validate the file and reload with your restored data
 
-## 6. Troubleshooting (Common Issues)
+## 5. Troubleshooting (Common Issues)
 
 *   **"Email not sending" or "Email sending failed" message after clicking "Email TXT Export"**:
     *   Ensure your computer has an active internet connection.
     *   If you are an administrator, verify the email sending credentials in the application's backend configuration (e.g., `.env` file for the Tauri app).
     *   Contact technical support or your system administrator if the issue persists.
 
-*   **Menu not appearing on digital signage / No new slides generated**:
-    *   First, confirm that you successfully sent the "Email TXT Export" from the Lunch Program application.
-    *   Ensure the Lunch Menu Script is running on its designated machine.
-    *   Verify that the email address used by the Lunch Menu Script to receive emails is correct and that it has access to the inbox.
-    *   Check with your system administrator to ensure the Lunch Menu Script's email receiving credentials and IMAP server settings are correct.
-    *   There might be a delay between sending the email and the script processing it. Allow a few minutes.
-    *   If issues persist, consult the `DEVELOPER_GUIDE.md` or contact technical support.
+*   **Menu data is missing after reopening the app**:
+    *   Check that your browser or system has not cleared localStorage.
+    *   If you previously exported a backup, use **Import Data** to restore it.
+
