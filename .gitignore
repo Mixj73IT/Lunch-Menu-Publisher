@@ -22,3 +22,7 @@ npm-debug.log*
 
 # Artifacts
 nul
+
+# Raw Bible data (processed versions are in data/)
+kjv.json
+kjv-cleaned.json

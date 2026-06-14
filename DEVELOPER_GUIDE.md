@@ -103,7 +103,7 @@ The JavaScript part of the Tauri application calls the Rust command.
 
 ### 3.4. Build & Deployment
 
-To build the Tauri application, navigate to the `c:\Users\Jr\Projects\Lunch Program_new` directory in your terminal and use standard Tauri build commands:
+To build the Tauri application, navigate to the project directory in your terminal and use standard Tauri build commands:
 ```bash
 npm install        # Install Node.js dependencies
 npm run tauri build # Build the application for your platform
@@ -131,7 +131,7 @@ The email receiving logic is encapsulated in `email_receiver.py`.
 *   **`email_receiver.py`**:
     *   **Location**: [email_receiver.py](file:///c:/Users/Jr/Desktop/Lunch%20Menu%20Script_new/email_receiver.py)
     *   **`get_menu_from_email(sender_email, subject_prefix, attachment_filename)` Function**:
-        *   **Environment Variables**: Loads `IMAP_SERVER`, `IMAP_PORT`, `EMAIL_USER`, `EMAIL_PASSWORD` from the `.env` file at `c:\Users\Jr\Desktop\Lunch Menu Script_new\.env`.
+        *   **Environment Variables**: Loads `IMAP_SERVER`, `IMAP_PORT`, `EMAIL_USER`, `EMAIL_PASSWORD` from the `.env` file in the Python script's directory.
         *   **IMAP Connection**: Establishes a secure connection (`IMAP4_SSL`) to the IMAP server using the provided credentials.
         *   **Email Search**: Searches the "inbox" for emails matching the `sender_email` and `subject_prefix`.
         *   **Attachment Extraction**: Fetches the latest matching email, parses its parts, and extracts the content of the attachment named `menu.txt`.
@@ -185,15 +185,15 @@ This section details the critical communication link between the two application
 2.  **Install Node.js**: Use a version manager like `nvm` or download from [nodejs.org](https://nodejs.org/).
 3.  **Install Tauri Prerequisites**: Refer to the [Tauri documentation](https://tauri.app/v1/guides/getting-started/prerequisites) for your operating system.
 4.  **Clone Repository**: `git clone <repository-url>`
-5.  **Install Frontend Dependencies**: `npm install` in the project root (`c:\Users\Jr\Projects\Lunch Program_new`).
-6.  **Create `.env`**: Create `c:\Users\Jr\Projects\Lunch Program_new\src-tauri\.env` and configure `EMAIL_USER`, `EMAIL_PASSWORD`, `SMTP_HOST`, `SMTP_PORT`.
+5.  **Install Frontend Dependencies**: `npm install` in the project root.
+6.  **Create `.env`**: Create `src-tauri/.env` in the project root and configure `EMAIL_USER`, `EMAIL_PASSWORD`, `SMTP_HOST`, `SMTP_PORT`.
 7.  **Run Development**: `npm run tauri dev`
 
 **Lunch Menu Script (Python):**
 1.  **Install Python 3**: Download from [python.org](https://www.python.org/downloads/).
-2.  **Clone Repository**: `git clone <repository-url>` (or ensure the files are in `c:\Users\Jr\Desktop\Lunch Menu Script_new`).
+2.  **Clone Repository**: `git clone <repository-url>` (or ensure the files are in your working directory).
 3.  **Install Dependencies**: `pip install -r requirements.txt` (if a `requirements.txt` exists, otherwise `pip install python-dotenv`).
-4.  **Create `.env`**: Create `c:\Users\Jr\Desktop\Lunch Menu Script_new\.env` and configure `IMAP_SERVER`, `IMAP_PORT`, `EMAIL_USER`, `EMAIL_PASSWORD`.
+4.  **Create `.env`**: Create `.env` in the script's directory and configure `IMAP_SERVER`, `IMAP_PORT`, `EMAIL_USER`, `EMAIL_PASSWORD`.
 5.  **Run Script**: `python Menu_Gen_Pro.py`
 
 ### 6.2. Testing Procedures
@@ -213,7 +213,7 @@ This section details the critical communication link between the two application
     *   Check if your email provider requires "App Passwords" for programmatic access.
     *   Review Tauri app console logs for Rust backend errors related to email sending.
 *   **Email Receiving Failures (Python)**:
-    *   Check `Lunch Menu Script_new/.env` for correct IMAP server, port, credentials.
+    *   Check the `.env` file in the script's directory for correct IMAP server, port, credentials.
     *   Ensure the `sender_email` and `subject_prefix` in `get_menu_from_email` match the email sent by the Tauri app.
     *   Verify network connectivity to the IMAP server.
     *   Check if the email actually arrived in the inbox and contains the `menu.txt` attachment.

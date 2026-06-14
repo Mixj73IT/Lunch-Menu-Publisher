@@ -23,7 +23,7 @@ winget install OpenJS.NodeJS
 
 ### 3. Install Tauri CLI
 ```bash
-cd "c:\Users\Jr\Projects\Lunch Program"
+cd "<project-directory>"
 npm install
 ```
 
