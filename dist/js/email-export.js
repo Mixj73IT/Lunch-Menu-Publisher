@@ -64,7 +64,7 @@ const EmailExport = {
                 this.openEmailClientMailto(recipient, subject, body);
             }
         } catch (error) {
-            console.error('Failed to send email:', error);
+            // Failed to send email — user already notified via alert
             alert(`Failed to send email: ${error}`);
         }
     },

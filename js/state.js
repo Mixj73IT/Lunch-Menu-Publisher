@@ -149,7 +149,7 @@ const State = {
             });
             if (migrated) {
                 this.saveSpecialEventTiles(prev);
-                console.log('Migrated special event tile types from "special" to "specialEvent"');
+                // Migrated special event tile types from "special" to "specialEvent"
             }
         } else {
             const prev = this.specialEventTiles;
@@ -167,7 +167,7 @@ const State = {
             const data = localStorage.getItem(key);
             return data ? JSON.parse(data) : null;
         } catch (e) {
-            console.error('Error loading from localStorage:', e);
+            // Error loading from localStorage — silently handled by returning null
             this.showError('Failed to load saved data. Your settings may have been reset.');
             return null;
         }
@@ -178,7 +178,7 @@ const State = {
             localStorage.setItem(key, JSON.stringify(data));
             return true;
         } catch (e) {
-            console.error('Error saving to localStorage:', e);
+            // Error saving to localStorage — user already notified via showError toast
             this.showError('Failed to save data. Your browser storage may be full. Please clear some data.');
             return false;
         }
@@ -308,7 +308,7 @@ const State = {
                 try {
                     data = JSON.parse(e.target.result);
                 } catch (parseErr) {
-                    console.error('JSON parse failed:', parseErr);
+                    // JSON parse failed — user already notified via showError toast
                     this.showError('The file is not valid JSON. Please select a backup file.');
                     return;
                 }
@@ -367,7 +367,6 @@ const State = {
                 alert('Data imported successfully! The page will now reload.');
                 location.reload();
             } catch (err) {
-                console.error('Import failed:', err);
                 const msg = (err && err.message) ? err.message : 'Failed to import data. The file may be corrupted.';
                 this.showError(msg);
             }

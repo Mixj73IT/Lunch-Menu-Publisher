@@ -17,9 +17,9 @@ const VerseSelector = {
             const response = await fetch('data/curated-verses.json');
             const data = await response.json();
             this.curatedVerses = data.verses;
-            console.log('Loaded', this.curatedVerses.length, 'curated verses');
+            // Curated verses loaded successfully
         } catch (err) {
-            console.error('Failed to load curated verses:', err);
+            // Failed to load curated verses — user already notified via showError toast
             this.curatedVerses = [];
             State.showError('Failed to load curated verses. Please check your internet connection and refresh the page.');
         } finally {
@@ -232,12 +232,12 @@ const BibleData = {
             const response = await fetch('data/kjv-bible.json');
             this.data = await response.json();
             VerseSelector.bibleData = this.data;
-            console.log('Loaded Bible data with', Object.keys(this.data).length, 'books');
+            // Bible data loaded successfully
             // If the advanced tab is already open, populate the book list now
             VerseSelector.populateBookSelect();
         } catch (err) {
             this._loadingPromise = null;
-            console.error('Failed to load Bible data:', err);
+            // Failed to load Bible data — user already notified via showError toast
             State.showError('Failed to load Bible data. Advanced verse lookup will not be available.');
         } finally {
             State.hideLoading();

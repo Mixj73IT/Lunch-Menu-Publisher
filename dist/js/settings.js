@@ -19,7 +19,7 @@ const Settings = {
         ];
         const missing = expectedIds.filter(id => !$(id));
         if (missing.length > 0) {
-            console.warn('Settings: missing DOM elements:', missing.join(', '));
+            // Some expected DOM elements are missing — gracefully skip their listeners
         }
         
         const settingsBtn = $('settingsBtn');

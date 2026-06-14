@@ -75,7 +75,7 @@ Callers snapshot before mutating: `const prev = [...State.entreeTiles]; State.en
 The email sending logic resides in the Rust backend as a Tauri command.
 
 *   **`send_menu_email` Command**:
-    *   **Location**: [main.rs](file:///c:/Users/Jr/Projects/Lunch%20Program_new/src-tauri/src/main.rs#L6-L65)
+    *   **Location**: `src-tauri/src/main.rs` (lines 6–65)
     *   **Purpose**: This asynchronous Rust function is exposed to the JavaScript frontend via `#[tauri::command]`. It takes `recipient`, `subject`, and `menu_content` as arguments.
     *   **Environment Variables**: It reads email credentials and SMTP server details from the `.env` file located at `src-tauri/.env`. These include `EMAIL_USER`, `EMAIL_PASSWORD`, `SMTP_HOST`, and `SMTP_PORT`.
     *   **Email Construction**: Uses `lettre_email::EmailBuilder` to construct the email.
@@ -92,7 +92,7 @@ The email sending logic resides in the Rust backend as a Tauri command.
 The JavaScript part of the Tauri application calls the Rust command.
 
 *   **`email-export.js`**:
-    *   **Location**: [js/email-export.js](file:///c:/Users/Jr/Projects/Lunch%20Program_new/js/email-export.js#L1-L89)
+    *   **Location**: `js/email-export.js` (lines 1–89)
     *   **Import**: It imports `invoke` from `@tauri-apps/api/tauri` to communicate with the Rust backend.
     *   **`emailTxt()` Function**:
         *   Retrieves the `recipient` from `State.txtEmail` and the `exportContent` by calling `FactsExport.generateExport()`.
@@ -129,7 +129,7 @@ The Python script is responsible for fetching the menu data via email and proces
 The email receiving logic is encapsulated in `email_receiver.py`.
 
 *   **`email_receiver.py`**:
-    *   **Location**: [email_receiver.py](file:///c:/Users/Jr/Desktop/Lunch%20Menu%20Script_new/email_receiver.py)
+    *   **Location**: `email_receiver.py` (in the Lunch Menu Script directory)
     *   **`get_menu_from_email(sender_email, subject_prefix, attachment_filename)` Function**:
         *   **Environment Variables**: Loads `IMAP_SERVER`, `IMAP_PORT`, `EMAIL_USER`, `EMAIL_PASSWORD` from the `.env` file in the Python script's directory.
         *   **IMAP Connection**: Establishes a secure connection (`IMAP4_SSL`) to the IMAP server using the provided credentials.
@@ -147,7 +147,7 @@ The email receiving logic is encapsulated in `email_receiver.py`.
 The `Menu_Gen_Pro.py` orchestrates the fetching and processing.
 
 *   **`Menu_Gen_Pro.py`**:
-    *   **Location**: [Menu_Gen_Pro.py](file:///c:/Users/Jr/Desktop/Lunch%20Menu%20Script_new/Menu_Gen_Pro.py#L12-L46)
+    *   **Location**: `Menu_Gen_Pro.py` (lines 12–46, in the Lunch Menu Script directory)
     *   **Email Configuration**: Defines `EMAIL_SENDER` and `EMAIL_SUBJECT_PREFIX` (can be configured via `.env` in the future).
     *   **`main()` Function**:
         *   Calls `setup_dirs()` from `menu_core` to ensure output directories exist.

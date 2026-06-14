@@ -19,7 +19,7 @@ const App = {
                 EmailExport.init();
             }
         } catch (e) {
-            console.warn('EmailExport not available (expected in browser):', e);
+            // EmailExport not available in browser (Tauri-only)
         }
 
         // Bible data is lazy-loaded only when the Advanced verse lookup tab is opened
@@ -29,7 +29,7 @@ const App = {
         this.setDefaultVerse();
         this.setupKeyboardShortcuts();
 
-        console.log('Lunch Menu Publisher initialized');
+        // App initialized
     },
 
     setupPreviewMode() {

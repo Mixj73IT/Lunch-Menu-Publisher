@@ -148,7 +148,7 @@ const Tiles = {
                 try {
                     Calendar.renderCalendar();
                 } catch (err) {
-                    console.error('Calendar.renderCalendar failed:', err);
+                    // Calendar.renderCalendar failed — gracefully continue since data was already saved
                 }
             }
         }
