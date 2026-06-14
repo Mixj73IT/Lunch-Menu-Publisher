@@ -59,7 +59,7 @@ Once your menu is complete:
 
 Once your menu is complete and ready for publishing:
 
-1. Click the **"Email TXT Export"** button to send menu data for FACTS processing
+1. Click the **"Email TXT Export"** button to send menu data for processing
 2. Click the **"Email PDF"** button to send a printable PDF version
 3. This will package the current month's menu data and send it as an email attachment
 4. You should receive a confirmation message if the email was sent successfully

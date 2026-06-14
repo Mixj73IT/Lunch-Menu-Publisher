@@ -22,7 +22,7 @@
 
 ### What Exists Now
 
-The **Lunch Menu Publisher** is a Tauri v1 desktop application with a vanilla JavaScript frontend (no framework, no bundler) and a Rust backend for SMTP email. It lets a cafeteria manager at a Christian school create monthly lunch menus, optionally add a Bible verse, and export to PDF, FACTS text format, or email.
+The **Lunch Menu Publisher** is a Tauri v1 desktop application with a vanilla JavaScript frontend (no framework, no bundler) and a Rust backend for SMTP email. It lets a cafeteria manager at a Christian school create monthly lunch menus, optionally add a Bible verse, and export to PDF, plain text, or email.
 
 A separate **Python script** (in a different project directory) fetches the emailed menu via IMAP and generates digital signage slides for BrightAuthor HD224 boxes.
 
@@ -155,7 +155,7 @@ lunch-menu-publisher/
 │   │   ├── Modals/
 │   │   │   ├── SettingsModal.tsx       # Settings form
 │   │   │   ├── VerseSelector.tsx       # Curated + advanced verse picker
-│   │   │   └── ExportModal.tsx         # FACTS export text + copy
+│   │   │   └── ExportModal.tsx         # Text export + copy
 │   │   └── Shared/
 │   │       ├── Toast.tsx               # Reusable toast notification
 │   │       ├── Modal.tsx               # Generic modal wrapper
@@ -174,7 +174,7 @@ lunch-menu-publisher/
 │   │
 │   ├── utils/
 │   │   ├── dates.ts                    # Month/year helpers, day calculations
-│   │   ├── export.ts                   # FACTS export text generation
+│   │   ├── export.ts                   # Plain text export generation
 │   │   ├── validation.ts              # Input validation helpers
 │   │   └── toast.ts                    # Toast notification logic
 │   │
@@ -308,7 +308,7 @@ interface SettingsStore {
 | NO SCHOOL toggling | Per-day NS button, weekend auto-NOSCHOOL, visual indicators |
 | Bible verses | Curated (month-filtered) + advanced (KJV book/chapter/verse) |
 | Settings | Compact grid toggle, verse toggle, advanced lookup toggle, email recipients |
-| FACTS export | Plain text generation, modal with copy button |
+| Text export | Plain text generation, modal with copy button |
 | PDF export | CSS print stylesheet, landscape letter, preview mode |
 | Email PDF | opens mailto: link with prefilled recipient |
 | Email TXT | SMTP email with menu.txt attachment |
@@ -419,7 +419,7 @@ This eliminates:
 - [ ] Implement natural milk display on school days
 - [ ] Implement panel collapse behavior
 - [ ] Port CSS from `app.css` for calendar, tiles, panels
-- [ ] Port FACTS export text generation logic
+- [ ] Port plain text export generation logic
 - [ ] Write tests for date utilities, export logic
 - [ ] **Deliverable**: Full monthly calendar with drag-and-drop, editing, and export
 
@@ -548,14 +548,14 @@ interface DayData {
 
 **Decision**: A single **"Send"** button triggers all active exports at once.
 - No scattered export buttons around the UI
-- One click sends PDF, FACTS text, signage JPEGs, Kiosk JSON, and optionally emails
-- People-facing exports (PDF, FACTS, signage) must **look polished**
+- One click sends PDF, plain text, signage JPEGs, Kiosk JSON, and optionally emails
+- People-facing exports (PDF, signage) must **look polished**
 - Technical exports (JSON, email attachments) just need to be correct
 
 | Export | Format | Audience | Priority |
 |--------|--------|----------|----------|
 | Printed menu | PDF via CSS print | Cafeteria manager (paper) | P0 |
-| FACTS/SIS text | Plain text | School information system | P0 |
+| SIS text | Plain text | School information system | P0 |
 | Email PDF | mailto: link | Admin/parents | P0 |
 | Email TXT | SMTP via Rust | Admin/parents | P0 |
 | HD224 slides | 1920×1080 JPEGs | Student-facing TV displays | P0 |
@@ -664,7 +664,7 @@ Use **Zustand** over Redux or Context:
 Four separate systems were discovered that all deal with lunch at Somerset Christian School:
 
 ```
-1. Lunch Program (Tauri v1)         ─ Monthly menu creation, PDF/FACTS/Email
+1. Lunch Program (Tauri v1)         ─ Monthly menu creation, PDF/text/email
 2. Lunch Menu Integrated (Python)   ─ Signage slide generation → BrightSign HD224
 3. Kioskv5 (Full-stack React)       ─ Student/visitor check-in + lunch selection (HAS MENU STUB)
 4. Google Sheets Blueprint (Planned)─ Teacher count submissions → Kitchen Dashboard (NOT YET BUILT)
@@ -822,7 +822,7 @@ Based on `SCS_Menu_System.md` document provided by the user:
 | `js/tiles.js` | Tile library + drag | → `src/components/Tiles/*.tsx` + `useDragAndDrop.ts` |
 | `js/verses.js` | Verse selection | → `src/components/Modals/VerseSelector.tsx` |
 | `js/settings.js` | Settings + panel collapse | → `src/components/Modals/SettingsModal.tsx` |
-| `js/facts-export.js` | FACTS text export | → `src/utils/export.ts` |
+| `js/text-export.js` | Plain text export | → `src/utils/export.ts` |
 | `js/email-export.js` | Email via Tauri command | → `src-tauri/src/email.rs` + React button |
 | `css/app.css` | Interactive styles | → `src/**/*.css` (Tailwind CSS) |
 | `css/pdf.css` | Print stylesheet | → `src/pdf.css` (ported, kept as-is) |

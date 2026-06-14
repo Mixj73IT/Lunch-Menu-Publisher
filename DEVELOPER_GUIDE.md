@@ -168,7 +168,7 @@ This section details the critical communication link between the two application
 *   **Email Content**:
     *   **Sender**: The `EMAIL_USER` configured in the Tauri app's `src-tauri/.env`.
     *   **Recipient**: The `EMAIL_USER` configured in the Python script's `email_receiver/.env`.
-    *   **Subject Line**: Follows the pattern "FACTS Export - Month Year" (e.g., "FACTS Export - May 2026"). The Python script searches for emails matching `subject_prefix="FACTS Export"`.
+    *   **Subject Line**: Follows the pattern "Menu Export - Month Year" (e.g., "Menu Export - May 2026"). The Python script searches for emails matching `subject_prefix="Menu Export"`.
     *   **Body**: A short explanatory text.
     *   **Attachment**: `menu.txt` containing the parsed menu data in a line-by-line format: `"DayOfWeek Month/Day: Entree + Side1, Side2 + SpecialEvent"`.
 *   **Security Considerations**:

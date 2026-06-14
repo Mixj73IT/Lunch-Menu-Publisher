@@ -27,7 +27,7 @@
             <div class="header-right">
                 <button id="previewBtn" class="btn btn-primary">Preview</button>
                 <button id="emailPdfBtn" class="btn btn-secondary no-print">Email PDF</button>
-                <button id="exportBtn" class="btn btn-secondary">FACTS Export</button>
+                <button id="exportBtn" class="btn btn-secondary">Text Export</button>
                 <button id="emailTxtBtn" class="btn btn-secondary no-print">Email TXT</button>
                 <button id="settingsBtn" class="btn btn-icon" title="Settings">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -183,15 +183,15 @@
             </div>
         </div>
 
-        <!-- FACTS Export Modal -->
+        <!-- Text Export Modal -->
         <div id="exportModal" class="modal no-print" style="display: none;">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2>FACTS Export</h2>
+                    <h2>Text Export</h2>
                     <button class="close-btn" id="closeExport">&times;</button>
                 </div>
                 <div class="modal-body">
-                    <p>Copy this text and paste into FACTS:</p>
+                    <p>Copy this text and paste into your SIS:</p>
                     <textarea id="exportText" readonly></textarea>
                     <button id="copyExportBtn" class="btn btn-primary">Copy to Clipboard</button>
                 </div>
@@ -207,7 +207,7 @@
     <script src="js/editing.js" defer></script>
     <script src="js/verses.js" defer></script>
     <script src="js/settings.js?v=2" defer></script>
-    <script src="js/facts-export.js" defer></script>
+    <script src="js/text-export.js" defer></script>
     <script src="js/email-export.js" defer></script>
     <script src="js/app.js?v=2" defer></script>
 </body>

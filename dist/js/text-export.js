@@ -1,5 +1,5 @@
 /**
- * FACTS Export - Plain text generation
+ * Text Export - Plain text generation
  */
 
 const FactsExport = {

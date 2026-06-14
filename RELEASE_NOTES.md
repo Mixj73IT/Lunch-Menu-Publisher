@@ -22,7 +22,7 @@
 
 ### Export & Delivery
 - **Print-Ready PDF** — Single-page, landscape PDF output via CSS print media
-- **FACTS Export** — Plain-text export compatible with FACTS school management systems
+- **Text Export** — Plain-text export for any school information system
 - **Email Integration** — Desktop app emails TXT exports directly via SMTP (Tauri backend)
 - **Data Backup & Restore** — Full JSON export/import of all menus, tiles, and settings
 

@@ -5,7 +5,7 @@ Enable a cafeteria manager to:
 1. Enter a monthly lunch menu
 2. Review it visually
 3. Export a professional PDF
-4. Copy a simple text version for FACTS SIS
+4. Copy a simple text version for any SIS
 
 ## User
 - Non‑technical

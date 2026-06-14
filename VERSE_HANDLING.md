@@ -2,7 +2,7 @@
 
 ## Scope
 - Verses decorate the PDF only
-- Verses do NOT affect FACTS output
+- Verses do NOT affect text export output
 - Verses are optional but first‑class
 
 ## Data Source

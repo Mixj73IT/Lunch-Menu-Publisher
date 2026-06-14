@@ -38,7 +38,7 @@ Designed for **offline-first** operation, all data persists locally and nothing 
 
 ### Export & Delivery
 - **Print-Ready PDF** — Single-page, landscape PDF output via CSS print media
-- **FACTS Export** — Plain-text export compatible with FACTS school management systems
+- **Text Export** — Plain-text export for any school information system
 - **Email Integration** — Desktop app can email TXT exports directly via SMTP (Tauri backend)
 - **Data Backup & Restore** — Full JSON export/import of all menus, tiles, and settings
 
@@ -108,7 +108,7 @@ Then open `http://localhost:8080` in your browser.
 3. **Populate the calendar** — Drag tiles onto day cells
 4. **Add a verse** — Click **Select Verse** and choose from curated or the full KJV Bible
 5. **Preview & print** — Click **Preview** to see the warm PDF layout, then print
-6. **Export** — Use **FACTS Export** or **Email TXT** to share the menu
+6. **Export** — Use **Text Export** or **Email TXT** to share the menu
 
 ---
 
@@ -128,7 +128,7 @@ lunch-menu-publisher/
 │   ├── calendar.js      # Calendar rendering & interaction
 │   ├── editing.js       # Day-cell inline editing
 │   ├── email-export.js  # Email export (Tauri invoke + mailto fallback)
-│   ├── facts-export.js  # FACTS-compatible text export
+│   ├── text-export.js   # Plain-text export for SIS import
 │   ├── settings.js      # Settings modal & preferences
 │   ├── state.js         # State management, localStorage, rollback
 │   ├── tiles.js         # Tile rendering & drag-and-drop
@@ -151,7 +151,7 @@ lunch-menu-publisher/
 | [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md) | Full technical architecture, backend integration, and build instructions |
 | [USER_README.md](USER_README.md) | End-user guide for cafeteria managers |
 | [README-PACKAGING.md](README-PACKAGING.md) | Packaging the app into a Windows installer |
-| [FACTS_EXPORT.md](FACTS_EXPORT.md) | FACTS export format specification |
+| [TEXT_EXPORT.md](TEXT_EXPORT.md) | Text export format specification |
 | [PDF_DESIGN_INTENT.md](PDF_DESIGN_INTENT.md) | PDF visual design rationale |
 | [SETTINGS_SPEC.md](SETTINGS_SPEC.md) | Settings modal specification |
 | [VERSE_HANDLING.md](VERSE_HANDLING.md) | Verse selection logic & Bible data handling |

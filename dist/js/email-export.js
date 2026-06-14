@@ -44,9 +44,9 @@ const EmailExport = {
             return;
         }
 
-        const exportContent = FactsExport.generateExport();
+        const exportContent = TextExport.generateExport();
         const monthName = this.getMonthName(State.currentMonth);
-        const subject = `FACTS Export - ${monthName} ${State.currentYear}`;
+        const subject = `Menu Export - ${monthName} ${State.currentYear}`;
 
         try {
             // Call the Rust command to send the email (Tauri desktop only)
@@ -60,7 +60,7 @@ const EmailExport = {
                 alert('Email sent successfully via Tauri!');
             } else {
                 // Fallback: open mailto with the content
-                const body = `Please find attached the FACTS export for ${monthName} ${State.currentYear}.\n\n--- FACTS Export Content ---\n${exportContent}`;
+                const body = `Please find attached the menu export for ${monthName} ${State.currentYear}.\n\n--- Menu Export Content ---\n${exportContent}`;
                 this.openEmailClientMailto(recipient, subject, body);
             }
         } catch (error) {

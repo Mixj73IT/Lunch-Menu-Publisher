@@ -11,7 +11,7 @@ const App = {
         await VerseSelector.init();
         Settings.init();
         PanelCollapse.init();
-        FactsExport.init();
+        TextExport.init();
 
         // EmailExport may not be available in browser (Tauri-only module)
         try {

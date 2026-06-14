@@ -1,8 +1,8 @@
 /**
- * FACTS Export - Plain text generation
+ * Text Export - Plain text generation
  */
 
-const FactsExport = {
+const TextExport = {
     dayNames: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
 
     init() {
