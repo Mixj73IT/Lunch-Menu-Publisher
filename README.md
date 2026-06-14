@@ -1,10 +1,18 @@
-# Lunch Menu Publisher
+<p align="center">
+  <img src="images/icon.svg" alt="Lunch Menu Publisher logo" width="120" height="120">
+</p>
 
-> A professional desktop application for schools to create, manage, and publish monthly lunch menus.
+<h1 align="center">Lunch Menu Publisher</h1>
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue)](https://github.com/yourusername/lunch-menu-publisher)
-[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
-[![Tauri](https://img.shields.io/badge/built%20with-Tauri-FFC131?logo=tauri)](https://tauri.app)
+<p align="center">
+  A professional desktop application for schools to create, manage, and publish monthly lunch menus.
+</p>
+
+<p align="center">
+  <a href="https://github.com/yourusername/lunch-menu-publisher"><img src="https://img.shields.io/badge/version-1.0.0-blue" alt="Version"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="License"></a>
+  <a href="https://tauri.app"><img src="https://img.shields.io/badge/built%20with-Tauri-FFC131?logo=tauri" alt="Tauri"></a>
+</p>
 
 ## Overview
 

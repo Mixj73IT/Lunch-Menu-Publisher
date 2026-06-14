@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <rect x="8" y="8" width="240" height="240" rx="24" fill="#6B1D1D"/>
+  <rect x="14" y="14" width="228" height="228" rx="18" fill="none" stroke="#C8A464" stroke-width="2"/>
+  <rect x="50" y="40" width="156" height="30" fill="#C8A464"/>
+  <line x1="50" y1="70" x2="206" y2="70" stroke="#FDF8F0" stroke-width="2"/>
+  <line x1="50" y1="70" x2="50" y2="210" stroke="#FDF8F0" stroke-width="2"/>
+  <line x1="102" y1="70" x2="102" y2="210" stroke="#FDF8F0" stroke-width="2"/>
+  <line x1="154" y1="70" x2="154" y2="210" stroke="#FDF8F0" stroke-width="2"/>
+  <line x1="206" y1="70" x2="206" y2="210" stroke="#FDF8F0" stroke-width="2"/>
+  <line x1="50" y1="117" x2="206" y2="117" stroke="#FDF8F0" stroke-width="2"/>
+  <line x1="50" y1="163" x2="206" y2="163" stroke="#FDF8F0" stroke-width="2"/>
+  <line x1="50" y1="210" x2="206" y2="210" stroke="#FDF8F0" stroke-width="2"/>
+  <circle cx="76" cy="93" r="6" fill="#C8A464"/>
+  <circle cx="128" cy="140" r="6" fill="#C8A464"/>
+  <circle cx="180" cy="93" r="6" fill="#C8A464"/>
+  <circle cx="76" cy="186" r="6" fill="#C8A464"/>
+  <text x="128" y="232" text-anchor="middle" fill="#FDF8F0" font-family="Arial, sans-serif" font-size="28" font-weight="bold">LMP</text>
+</svg>
