@@ -15,7 +15,7 @@
     "bundle": {
       "active": true,
       "category": "Productivity",
-      "copyright": "",
+      "copyright": "© 2026 Jr. Haynes. Licensed under MIT.",
       "deb": {
         "depends": []
       },
