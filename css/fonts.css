@@ -1,0 +1,57 @@
+/* Offline font declarations — WOFF2 primary, TTF fallback */
+@font-face {
+    font-family: 'Crimson Text';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('../fonts/crimson-text-400.woff2') format('woff2'),
+         url('../fonts/crimson-text-400.ttf') format('truetype');
+}
+@font-face {
+    font-family: 'Crimson Text';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url('../fonts/crimson-text-600.woff2') format('woff2'),
+         url('../fonts/crimson-text-600.ttf') format('truetype');
+}
+@font-face {
+    font-family: 'Crimson Text';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url('../fonts/crimson-text-700.woff2') format('woff2'),
+         url('../fonts/crimson-text-700.ttf') format('truetype');
+}
+@font-face {
+    font-family: 'Dancing Script';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('../fonts/dancing-script-400.woff2') format('woff2'),
+         url('../fonts/dancing-script-400.ttf') format('truetype');
+}
+@font-face {
+    font-family: 'Dancing Script';
+    font-style: normal;
+    font-weight: 700;
+    font-display: swap;
+    src: url('../fonts/dancing-script-700.woff2') format('woff2'),
+         url('../fonts/dancing-script-700.ttf') format('truetype');
+}
+@font-face {
+    font-family: 'Open Sans';
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+    src: url('../fonts/open-sans-400.woff2') format('woff2'),
+         url('../fonts/open-sans-400.ttf') format('truetype');
+}
+@font-face {
+    font-family: 'Open Sans';
+    font-style: normal;
+    font-weight: 600;
+    font-display: swap;
+    src: url('../fonts/open-sans-600.woff2') format('woff2'),
+         url('../fonts/open-sans-600.ttf') format('truetype');
+}

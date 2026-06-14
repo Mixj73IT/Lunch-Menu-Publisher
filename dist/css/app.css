@@ -9,29 +9,42 @@
     --font-serif: 'Crimson Text', Georgia, serif;
     --font-sans: 'Open Sans', sans-serif;
     --font-script: 'Dancing Script', cursive;
-    
+
     --day-normal-bg: #ffffff;
     --day-weekend-bg: #e8eaed;
     --day-noschool-bg: #d1d5db;
-    
+
     --color-bg: #f8f9fa;
     --color-panel: #ffffff;
     --color-border: #dee2e6;
     --color-text: #212529;
     --color-text-muted: #6c757d;
     --color-accent: #0d6efd;
-    
+
     --color-noschool-bg: #4a4a4a;
     --color-noschool-text: #ffffff;
     --color-weekend-bg: #5a5a5a;
-    
+
     --color-tile-entree: #fff8e7;
     --color-tile-side: #f0f8f0;
     --color-tile-border: #d1d5db;
-    
+
     --panel-width: 220px;
     --header-height: 60px;
     --day-min-height: 90px;
+
+    /* PDF / Preview Palette — warm burgundy & gold */
+    --pdf-burgundy: #8B1A1A;
+    --pdf-gold: #C4A77D;
+    --pdf-cream: #fdf8f0;
+    --pdf-cream-light: #fffcf7;
+    --pdf-text-dark: #2c1810;
+    --pdf-text-muted: #7a6b5d;
+    --pdf-text-brown: #5a4a3a;
+    --pdf-text-light: #b8a89a;
+    --pdf-border: #e8ddd0;
+    --pdf-weekend-bg: #f5f0e8;
+    --pdf-noschool-bg: #faf3e0;
 }
 
 /* Reset & Base */
@@ -803,6 +816,24 @@ body.preview-mode #printPreviewBtn {
     width: 60px !important;
 }
 
+/* Day missing entree safeguard */
+@keyframes missing-entree-pulse {
+    0%, 100% { border-color: #ff9800; box-shadow: inset 0 0 0 rgba(255, 152, 0, 0); }
+    50%      { border-color: #ffb74d; box-shadow: inset 0 0 4px rgba(255, 152, 0, 0.15); }
+}
+
+.day-cell.missing-entree {
+    border: 2px solid #ff9800;
+    animation: missing-entree-pulse 2.5s ease-in-out infinite;
+}
+
+.day-cell.missing-entree .day-entree-placeholder {
+    color: #e65100;
+    font-style: italic;
+    font-size: 0.85em;
+    opacity: 0.7;
+}
+
 /* Drop target highlight */
 .day-cell.drag-over {
     outline: 2px dashed var(--color-accent);
@@ -986,13 +1017,13 @@ body.preview-mode .print-header {
     gap: 14px;
     margin-bottom: 6px;
     padding-bottom: 8px;
-    border-bottom: 2px solid #C4A77D;
+    border-bottom: 2px solid var(--pdf-gold);
 }
 
 /* Refined page border - subtle double-line frame in preview mode */
 body.preview-mode .calendar-container {
     padding: 12px 0 0 0;
-    background: #fdf8f0;
+    background: var(--pdf-cream);
     min-height: 100vh;
     border: none;
     outline: none;
@@ -1013,7 +1044,7 @@ body.preview-mode .print-school-name {
     font-family: 'Crimson Text', Georgia, serif;
     font-size: 13pt;
     font-weight: 600;
-    color: #8B1A1A;
+    color: var(--pdf-burgundy);
     font-variant: small-caps;
     letter-spacing: 2px;
     display: block;
@@ -1026,7 +1057,7 @@ body.preview-mode .month-title {
     font-weight: 700;
     text-align: left;
     margin: 0;
-    color: #8B1A1A;
+    color: var(--pdf-burgundy);
     line-height: 1.1;
 }
 
@@ -1039,7 +1070,7 @@ body.preview-mode .verse-display {
 body.preview-mode .verse-text {
     font-size: 34pt;
     font-weight: 700;
-    color: #5a4a3a;
+    color: var(--pdf-text-brown);
     line-height: 1.3;
     margin-bottom: 3px;
     text-wrap: pretty;
@@ -1050,7 +1081,7 @@ body.preview-mode .verse-text::before {
     content: "\201C";
     font-family: 'Dancing Script', cursive;
     font-size: 48pt;
-    color: #C4A77D;
+    color: var(--pdf-gold);
     line-height: 0;
     vertical-align: -0.35em;
     margin-right: 6px;
@@ -1061,7 +1092,7 @@ body.preview-mode .verse-text::after {
     content: "\201D";
     font-family: 'Dancing Script', cursive;
     font-size: 48pt;
-    color: #C4A77D;
+    color: var(--pdf-gold);
     line-height: 0;
     vertical-align: -0.35em;
     margin-left: 6px;
@@ -1070,7 +1101,7 @@ body.preview-mode .verse-text::after {
 
 body.preview-mode .verse-ref {
     font-size: 11pt;
-    color: #8B1A1A;
+    color: var(--pdf-burgundy);
     letter-spacing: 1.5px;
 }
 
@@ -1079,7 +1110,7 @@ body.preview-mode .verse-display::after {
     content: "\2766";
     display: block;
     font-size: 14pt;
-    color: #C4A77D;
+    color: var(--pdf-gold);
     opacity: 0.5;
     margin-top: 6px;
     letter-spacing: 8px;
@@ -1095,7 +1126,7 @@ body.preview-mode .calendar-header::before {
     display: block;
     width: 30%;
     height: 1px;
-    background: linear-gradient(to right, transparent, #C4A77D, transparent);
+    background: linear-gradient(to right, transparent, var(--pdf-gold), transparent);
     margin: 0 auto 4px auto;
     opacity: 0.4;
 }
@@ -1109,7 +1140,7 @@ body.preview-mode .ns-toggle {
 }
 
 body.preview-mode {
-    background: #fdf8f0;
+    background: var(--pdf-cream);
     overflow: hidden;
 }
 
@@ -1134,33 +1165,33 @@ body.preview-mode #exitPreviewBtn {
 
 /* Calendar grid in preview mode - warm toned, full page */
 body.preview-mode .calendar-grid {
-    background: #e8ddd0;
-    border: 1px solid #e8ddd0;
+    background: var(--pdf-border);
+    border: 1px solid var(--pdf-border);
     border-radius: 4px;
     overflow: visible;
     grid-template-columns: 0.5fr 1.9fr 1.9fr 1.9fr 1.9fr 1.9fr 0.5fr;
 }
 
 body.preview-mode .day-header {
-    background: #8B1A1A;
-    color: #fdf8f0;
+    background: var(--pdf-burgundy);
+    color: var(--pdf-cream);
     font-size: 9pt;
     padding: 6px 2px;
 }
 
 body.preview-mode .day-cell {
-    background: #fffcf7;
-    border-bottom: 1px solid #e8ddd0;
+    background: var(--pdf-cream-light);
+    border-bottom: 1px solid var(--pdf-border);
     min-height: 1.05in;
     padding: 8px 10px;
 }
 
 body.preview-mode .day-cell.weekend {
-    background: #f5f0e8;
+    background: var(--pdf-weekend-bg);
 }
 
 body.preview-mode .day-cell.no-school.weekday {
-    background: #faf3e0;
+    background: var(--pdf-noschool-bg);
     background-image: repeating-linear-gradient(
         45deg,
         transparent,
@@ -1171,8 +1202,8 @@ body.preview-mode .day-cell.no-school.weekday {
 }
 
 body.preview-mode .day-special-event {
-    background: #faf3e0;
-    border-left: 3px solid #C4A77D;
+    background: var(--pdf-noschool-bg);
+    border-left: 3px solid var(--pdf-gold);
     color: #5a3e2b;
     padding: 3px 8px;
     font-size: 9pt;
@@ -1181,13 +1212,13 @@ body.preview-mode .day-special-event {
 }
 
 body.preview-mode .day-number {
-    color: #b8a89a;
+    color: var(--pdf-text-light);
     font-size: 8pt;
     margin-bottom: 3px;
 }
 
 body.preview-mode .day-entree {
-    color: #2c1810;
+    color: var(--pdf-text-dark);
     font-size: 10pt;
     font-weight: 700;
     margin-bottom: 2px;
@@ -1201,22 +1232,22 @@ body.preview-mode .day-content {
 }
 
 body.preview-mode .day-sides {
-    color: #7a6b5d;
+    color: var(--pdf-text-muted);
     font-size: 8.5pt;
 }
 
 body.preview-mode .day-staple {
-    color: #7a6b5d;
+    color: var(--pdf-text-muted);
     font-size: 8pt;
 }
 
 body.preview-mode .day-special {
-    color: #8B1A1A;
+    color: var(--pdf-burgundy);
     font-size: 8.5pt;
     font-weight: 600;
     margin-top: 3px;
     margin-bottom: 1px;
-    border-left: 3px solid #C4A77D;
+    border-left: 3px solid var(--pdf-gold);
     padding-left: 6px;
 }
 
@@ -1227,6 +1258,15 @@ body.preview-mode .day-special::before {
 body.preview-mode .clear-day-btn,
 body.preview-mode .ns-toggle {
     display: none !important;
+}
+
+body.preview-mode .day-cell.missing-entree {
+    border-color: var(--color-border);
+    animation: none;
+}
+
+body.preview-mode .day-entree-placeholder {
+    display: none;
 }
 
 /* ========================================

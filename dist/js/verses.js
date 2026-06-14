@@ -81,8 +81,10 @@ const VerseSelector = {
             advancedTab.classList.add('active');
             verseList.style.display = 'none';
             verseAdvanced.style.display = 'flex';
-            // Populate books if Bible data is now loaded
-            if (this.bibleData) {
+            // Lazy-load Bible data when user first opens the advanced tab
+            if (!this.bibleData) {
+                BibleData.load();
+            } else {
                 this.populateBookSelect();
             }
         }
@@ -214,8 +216,17 @@ const VerseSelector = {
 // Initialize bible data loader
 const BibleData = {
     data: null,
+    _loadingPromise: null,
 
     async load() {
+        if (this.data) return;
+        if (this._loadingPromise) return this._loadingPromise;
+
+        this._loadingPromise = this._doLoad();
+        return this._loadingPromise;
+    },
+
+    async _doLoad() {
         State.showLoading('Loading Bible data...');
         try {
             const response = await fetch('data/kjv-bible.json');
@@ -225,6 +236,7 @@ const BibleData = {
             // If the advanced tab is already open, populate the book list now
             VerseSelector.populateBookSelect();
         } catch (err) {
+            this._loadingPromise = null;
             console.error('Failed to load Bible data:', err);
             State.showError('Failed to load Bible data. Advanced verse lookup will not be available.');
         } finally {

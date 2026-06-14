@@ -33,11 +33,11 @@
     }
 
     body {
-        background: #fdf8f0 !important;
+        background: var(--pdf-cream) !important;
         font-size: 10pt;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
-        color: #2c1810;
+        color: var(--pdf-text-dark);
     }
 
     /* Layout adjustments */
@@ -52,10 +52,10 @@
         padding: 0;
         width: 100%;
         max-width: 100%;
-        outline: 1px solid #e8ddd0 !important;
+        outline: 1px solid var(--pdf-border) !important;
         outline-offset: 6px !important;
-        border: 1px solid #e8ddd0 !important;
-        background: #fdf8f0 !important;
+        border: 1px solid var(--pdf-border) !important;
+        background: var(--pdf-cream) !important;
     }
 
     /* ========================================
@@ -67,7 +67,7 @@
         gap: 14px;
         margin-bottom: 6px;
         padding-bottom: 8px;
-        border-bottom: 2px solid #C4A77D;
+        border-bottom: 2px solid var(--pdf-gold);
     }
 
     .print-logo {
@@ -84,7 +84,7 @@
         font-family: 'Crimson Text', Georgia, 'Times New Roman', serif !important;
         font-size: 13pt !important;
         font-weight: 600 !important;
-        color: #8B1A1A !important;
+        color: var(--pdf-burgundy) !important;
         font-variant: small-caps !important;
         letter-spacing: 2px !important;
         display: block !important;
@@ -102,7 +102,7 @@
         font-weight: 700 !important;
         text-align: left !important;
         margin: 0 !important;
-        color: #8B1A1A !important;
+        color: var(--pdf-burgundy) !important;
         line-height: 1.1 !important;
     }
 
@@ -121,7 +121,7 @@
         font-size: 34pt !important;
         font-weight: 700 !important;
         line-height: 1.3 !important;
-        color: #5a4a3a !important;
+        color: var(--pdf-text-brown) !important;
         margin-bottom: 3px !important;
         text-wrap: pretty !important;
     }
@@ -131,7 +131,7 @@
         content: "\201C" !important;
         font-family: 'Dancing Script', cursive !important;
         font-size: 48pt !important;
-        color: #C4A77D !important;
+        color: var(--pdf-gold) !important;
         line-height: 0 !important;
         vertical-align: -0.35em !important;
         margin-right: 6px !important;
@@ -142,7 +142,7 @@
         content: "\201D" !important;
         font-family: 'Dancing Script', cursive !important;
         font-size: 48pt !important;
-        color: #C4A77D !important;
+        color: var(--pdf-gold) !important;
         line-height: 0 !important;
         vertical-align: -0.35em !important;
         margin-left: 6px !important;
@@ -153,7 +153,7 @@
         font-family: 'Crimson Text', Georgia, serif !important;
         font-variant: small-caps !important;
         font-size: 11pt !important;
-        color: #8B1A1A !important;
+        color: var(--pdf-burgundy) !important;
         letter-spacing: 1.5px !important;
         display: inline-block !important;
     }
@@ -163,7 +163,7 @@
         content: "\2766" !important;
         display: block !important;
         font-size: 14pt !important;
-        color: #C4A77D !important;
+        color: var(--pdf-gold) !important;
         opacity: 0.5 !important;
         margin-top: 6px !important;
         letter-spacing: 8px !important;
@@ -175,7 +175,7 @@
         display: block !important;
         width: 30% !important;
         height: 1px !important;
-        background: linear-gradient(to right, transparent, #C4A77D, transparent) !important;
+        background: linear-gradient(to right, transparent, var(--pdf-gold), transparent) !important;
         margin: 0 auto 4px auto !important;
         opacity: 0.4 !important;
     }
@@ -188,16 +188,16 @@
         display: grid !important;
         grid-template-columns: 0.5fr 1.9fr 1.9fr 1.9fr 1.9fr 1.9fr 0.5fr !important;
         gap: 1px !important;
-        background: #e8ddd0 !important;
-        border: 1px solid #e8ddd0 !important;
+        background: var(--pdf-border) !important;
+        border: 1px solid var(--pdf-border) !important;
         border-radius: 4px !important;
         overflow: visible !important;
     }
 
     /* Day headers - Burgundy with gold accent */
     .day-header {
-        background: #8B1A1A !important;
-        color: #fdf8f0 !important;
+        background: var(--pdf-burgundy) !important;
+        color: var(--pdf-cream) !important;
         padding: 6px 2px !important;
         text-align: center !important;
         font-weight: 700 !important;
@@ -210,13 +210,13 @@
 
     /* Day cells - Taller to fill the page */
     .day-cell {
-        background: #fffcf7 !important;
+        background: var(--pdf-cream-light) !important;
         min-height: 1.05in !important;
         padding: 6px 8px !important;
         position: relative !important;
         page-break-inside: avoid !important;
         border: none !important;
-        border-bottom: 1px solid #e8ddd0 !important;
+        border-bottom: 1px solid var(--pdf-border) !important;
     }
 
     /* Day numbers - Warm gray, uppercase */
@@ -224,7 +224,7 @@
         font-family: 'Open Sans', 'Segoe UI', sans-serif !important;
         font-weight: 600 !important;
         font-size: 8pt !important;
-        color: #b8a89a !important;
+        color: var(--pdf-text-light) !important;
         margin-bottom: 3px !important;
         display: block !important;
         text-transform: uppercase !important;
@@ -243,14 +243,14 @@
         font-weight: 700 !important;
         font-size: 10pt !important;
         margin-bottom: 2px !important;
-        color: #2c1810 !important;
+        color: var(--pdf-text-dark) !important;
     }
 
     .day-sides {
         font-family: 'Crimson Text', Georgia, serif !important;
         font-style: italic !important;
         font-size: 8.5pt !important;
-        color: #7a6b5d !important;
+        color: var(--pdf-text-muted) !important;
         line-height: 1.3 !important;
     }
 
@@ -259,7 +259,7 @@
         font-family: 'Crimson Text', Georgia, serif !important;
         font-style: italic !important;
         font-size: 8pt !important;
-        color: #7a6b5d !important;
+        color: var(--pdf-text-muted) !important;
         margin-top: 2px !important;
         letter-spacing: 0.3px !important;
     }
@@ -269,10 +269,10 @@
         font-family: 'Crimson Text', Georgia, serif !important;
         font-weight: 600 !important;
         font-size: 8.5pt !important;
-        color: #8B1A1A !important;
+        color: var(--pdf-burgundy) !important;
         margin-top: 3px !important;
         margin-bottom: 1px !important;
-        border-left: 3px solid #C4A77D !important;
+        border-left: 3px solid var(--pdf-gold) !important;
         padding-left: 6px !important;
     }
 
@@ -287,9 +287,9 @@
         font-variant: small-caps !important;
         font-size: 8pt !important;
         margin-top: 5px !important;
-        background: #faf3e0 !important;
+        background: var(--pdf-noschool-bg) !important;
         padding: 3px 8px !important;
-        border-left: 3px solid #C4A77D !important;
+        border-left: 3px solid var(--pdf-gold) !important;
         letter-spacing: 0.5px !important;
     }
 
@@ -299,16 +299,16 @@
        ======================================== */
     
     .day-cell.weekend {
-        background: #f5f0e8 !important;
+        background: var(--pdf-weekend-bg) !important;
     }
 
     .day-cell.weekend .day-number {
-        color: #b8a89a !important;
+        color: var(--pdf-text-light) !important;
     }
 
     /* Weekday NO SCHOOL - warm amber with subtle pattern */
     .day-cell.no-school.weekday {
-        background: #faf3e0 !important;
+        background: var(--pdf-noschool-bg) !important;
         background-image: repeating-linear-gradient(
             45deg,
             transparent,
@@ -332,7 +332,7 @@
         font-size: 8pt !important;
         letter-spacing: 2px !important;
         font-weight: 700 !important;
-        color: #8B1A1A !important;
+        color: var(--pdf-burgundy) !important;
         position: absolute !important;
         top: 50% !important;
         left: 50% !important;
@@ -362,37 +362,37 @@
 
     /* Ensure text is always readable */
     * {
-        color: #2c1810 !important;
+        color: var(--pdf-text-dark) !important;
     }
 
     .day-sides,
     .day-staple,
     .verse-ref {
-        color: #7a6b5d !important;
+        color: var(--pdf-text-muted) !important;
     }
 
     .day-number {
-        color: #b8a89a !important;
+        color: var(--pdf-text-light) !important;
     }
 
     .day-entree {
-        color: #2c1810 !important;
+        color: var(--pdf-text-dark) !important;
     }
 
     .verse-text {
-        color: #5a4a3a !important;
+        color: var(--pdf-text-brown) !important;
     }
 
     .print-school-name {
-        color: #8B1A1A !important;
+        color: var(--pdf-burgundy) !important;
     }
 
     .month-title {
-        color: #8B1A1A !important;
+        color: var(--pdf-burgundy) !important;
     }
 
     .day-header {
-        color: #fdf8f0 !important;
+        color: var(--pdf-cream) !important;
     }
 
     /* Hide any remaining edit indicators */

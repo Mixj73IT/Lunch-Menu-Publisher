@@ -181,6 +181,12 @@ const Calendar = {
                 entreeDiv.className = 'day-entree';
                 entreeDiv.textContent = dayData.entree;
                 content.appendChild(entreeDiv);
+            } else {
+                cell.classList.add('missing-entree');
+                const placeholder = document.createElement('div');
+                placeholder.className = 'day-entree-placeholder';
+                placeholder.textContent = 'No entree set';
+                content.appendChild(placeholder);
             }
 
             if (dayData.sides && dayData.sides.length > 0) {

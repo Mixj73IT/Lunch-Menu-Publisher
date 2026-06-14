@@ -22,8 +22,8 @@ const App = {
             console.warn('EmailExport not available (expected in browser):', e);
         }
 
-        // Load Bible data in parallel (don't await - let it load in background)
-        BibleData.load();
+        // Bible data is lazy-loaded only when the Advanced verse lookup tab is opened
+        // (see settings.js advancedVerseToggle listener and verses.js open() method)
 
         this.setupPreviewMode();
         this.setDefaultVerse();
