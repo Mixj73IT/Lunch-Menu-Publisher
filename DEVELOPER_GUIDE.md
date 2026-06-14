@@ -1,30 +1,28 @@
-# Developer Guide: Lunch Menu Automation System
+# Developer Guide: Lunch Menu Publisher
 
 ## 1. Introduction
 
-This document serves as a comprehensive technical guide for developers working on the integrated Lunch Menu Automation System. It details the architecture, implementation specifics, and interaction mechanisms between the "Lunch Program" (a Tauri desktop application) and the "Lunch Menu Script" (a Python script). The primary goal of this integration is to automate the transfer of lunch menu data from the Lunch Program to the Python script via email, enabling the Python script to generate daily signage slides.
+This document serves as a comprehensive technical guide for developers working on the **Lunch Menu Publisher**, a Tauri desktop application for creating, managing, and publishing monthly school lunch menus. The app is self-contained: all data persists locally, menus are generated entirely within the app, and email exports are sent directly to configured recipients without any external processing pipeline.
 
 ## 2. System Architecture
 
-The system comprises two main applications communicating through a standard email service, facilitating a decoupled and asynchronous data flow.
+The application is a single Tauri desktop app with a web frontend (HTML, CSS, JavaScript) and a Rust backend for native capabilities.
 
 ```mermaid
 graph TD
-    A[Lunch Program (Tauri Desktop App)] --&gt;|Generates Menu, Sends Email| B(Email Service - SMTP)
-    B --&gt;|Stores Email| C(Email Service - IMAP)
-    C --&gt;|Fetches Email, Extracts Attachment| D[Lunch Menu Script (Python)]
-    D --&gt;|Processes Data, Generates Signage| E[Digital Signage (e.g., BrightAuthor)]
+    A[Lunch Menu Publisher (Tauri Desktop App)] -->|Generates Menu, PDF, Text Export| B[User]
+    A -->|Sends TXT via SMTP| C[Email Recipient]
+    A -->|Prints / Saves| D[PDF Output]
 ```
 
 **Components:**
-*   **Lunch Program (Tauri App)**: A cross-platform desktop application responsible for generating monthly lunch menus and exporting them. It now includes functionality to send the generated menu as a plain text attachment via email.
-*   **Email Service (SMTP/IMAP)**: A standard email provider used for sending (SMTP) and receiving (IMAP) the menu data. This acts as the communication backbone.
-*   **Lunch Menu Script (Python)**: A Python script designed to fetch the latest menu email, extract the menu data from an attachment, parse it, and then generate visual output (signage slides).
-*   **Digital Signage**: The final destination for the generated menu slides, such as BrightAuthor for HD224 boxes.
+*   **Frontend (HTML/CSS/JS)**: Handles UI, drag-and-drop, calendar rendering, state management, and PDF preview via CSS print media.
+*   **Backend (Rust)**: Exposes a single Tauri command for SMTP email sending. All other functionality is client-side.
+*   **Data Storage**: `localStorage` for all app state (tiles, menus, settings). No server or database required.
 
 ## 3. Lunch Program (Tauri App) - Technical Details
 
-The Lunch Program is built using Tauri, allowing for a web frontend (HTML, CSS, JavaScript) to interact with Rust-based backend functionalities.
+The Lunch Menu Publisher is built using Tauri, allowing for a web frontend to interact with Rust-based backend functionalities.
 
 ### 3.0. Frontend Architecture Patterns
 
@@ -66,7 +64,6 @@ Callers snapshot before mutating: `const prev = [...State.entreeTiles]; State.en
 *   `serde = { version = "1.0", features = ["derive"] }`: Serialization/deserialization for Rust structs.
 *   `serde_json = "1.0"`: JSON handling.
 *   `lettre = { version = "0.11", default-features = false, features = ["builder", "smtp-transport", "rustls-tls"] }`: Email sending library. Configured for SMTP transport with Rustls for TLS.
-*   `lettre_email = "0.1"`: Helper library for building email messages with `lettre`.
 *   `tokio = { version = "1.36.0", features = ["full"] }`: Asynchronous runtime for Rust, used for non-blocking I/O (email sending).
 *   `dotenv = "0.15"`: For loading environment variables from a `.env` file.
 
@@ -75,15 +72,14 @@ Callers snapshot before mutating: `const prev = [...State.entreeTiles]; State.en
 The email sending logic resides in the Rust backend as a Tauri command.
 
 *   **`send_menu_email` Command**:
-    *   **Location**: `src-tauri/src/main.rs` (lines 6–65)
+    *   **Location**: `src-tauri/src/main.rs`
     *   **Purpose**: This asynchronous Rust function is exposed to the JavaScript frontend via `#[tauri::command]`. It takes `recipient`, `subject`, and `menu_content` as arguments.
     *   **Environment Variables**: It reads email credentials and SMTP server details from the `.env` file located at `src-tauri/.env`. These include `EMAIL_USER`, `EMAIL_PASSWORD`, `SMTP_HOST`, and `SMTP_PORT`.
-    *   **Email Construction**: Uses `lettre_email::EmailBuilder` to construct the email.
+    *   **Email Construction**: Uses `lettre::Message::builder` to construct the email.
         *   `from()`: Uses `EMAIL_USER` for the sender address.
         *   `to()`: Sets the recipient.
         *   `subject()`: Sets the email subject.
-        *   `text()`: Includes a simple body message.
-        *   `attachment_text()`: Attaches the `menu_content` as a plain text file named `menu.txt`. This is crucial for the Python script to pick it up.
+        *   `multipart()`: Includes a plain text body and attaches the `menu_content` as a plain text file named `menu.txt`.
     *   **SMTP Transport**: Configures `lettre::SmtpTransport` with `SMTP_HOST`, `SMTP_PORT`, and `Credentials` for authentication. It enforces TLS for secure communication.
     *   **Error Handling**: Returns `Result<String, String>` to indicate success or failure, with error messages providing details.
 
@@ -92,12 +88,11 @@ The email sending logic resides in the Rust backend as a Tauri command.
 The JavaScript part of the Tauri application calls the Rust command.
 
 *   **`email-export.js`**:
-    *   **Location**: `js/email-export.js` (lines 1–89)
-    *   **Import**: It imports `invoke` from `@tauri-apps/api/tauri` to communicate with the Rust backend.
+    *   **Location**: `js/email-export.js`
     *   **`emailTxt()` Function**:
-        *   Retrieves the `recipient` from `State.txtEmail` and the `exportContent` by calling `FactsExport.generateExport()`.
+        *   Retrieves the `recipient` from `State.txtEmail` and the `exportContent` by calling `TextExport.generateExport()`.
         *   Constructs the `subject` dynamically.
-        *   Calls `await invoke('send_menu_email', { recipient, subject, menuContent: exportContent });`.
+        *   Calls `await tauriInvoke('send_menu_email', { recipient, subject, menuContent: exportContent });`.
         *   Provides user feedback (alerts) for success or failure.
     *   **`emailPdf()` Function**: Currently falls back to a `mailto:` link for PDF, as direct PDF attachment sending is not yet implemented in the Rust backend. A separate Rust command would be needed for this if required.
 
@@ -110,77 +105,68 @@ npm run tauri build # Build the application for your platform
 ```
 The output executable will be found in `src-tauri/target/release`.
 
-## 4. Lunch Menu Script (Python) - Technical Details
+## 4. Data & Export Formats
 
-The Python script is responsible for fetching the menu data via email and processing it.
+### 4.1. Text Export Format
 
-### 4.1. Project Setup & Dependencies
+The **Text Export** generates plain text suitable for copying into any school information system (SIS). Each line represents one school day:
 
-*   **Python**: The script is written in Python 3.
-*   **`python-dotenv`**: For loading environment variables from a `.env` file.
-    ```bash
-    pip install python-dotenv
-    ```
-*   **`imaplib`**: Standard Python library for IMAP client operations.
-*   **`email`**: Standard Python library for parsing email messages.
+```
+Mon 9/1: Cheeseburger + Corn, Apple Slices + Bake Sale
+Tue 9/2: Chicken Tenders + Mashed Potatoes, Green Beans
+```
 
-### 4.2. Email Receiving Implementation
+**Rules:**
+*   One line per weekday
+*   No weekends
+*   No blank lines
+*   Format: `DayOfWeek Month/Day: Entree + Side1, Side2 + SpecialEvent`
+*   Sides are comma-separated; items are joined with ` + `
+*   Days marked NO SCHOOL are excluded
 
-The email receiving logic is encapsulated in `email_receiver.py`.
+### 4.2. PDF Export
 
-*   **`email_receiver.py`**:
-    *   **Location**: `email_receiver.py` (in the Lunch Menu Script directory)
-    *   **`get_menu_from_email(sender_email, subject_prefix, attachment_filename)` Function**:
-        *   **Environment Variables**: Loads `IMAP_SERVER`, `IMAP_PORT`, `EMAIL_USER`, `EMAIL_PASSWORD` from the `.env` file in the Python script's directory.
-        *   **IMAP Connection**: Establishes a secure connection (`IMAP4_SSL`) to the IMAP server using the provided credentials.
-        *   **Email Search**: Searches the "inbox" for emails matching the `sender_email` and `subject_prefix`.
-        *   **Attachment Extraction**: Fetches the latest matching email, parses its parts, and extracts the content of the attachment named `menu.txt`.
-        *   **Error Handling**: Returns a dictionary indicating success or an error message.
-    *   **`parse_menu_content(content)` Function**:
-        *   **Purpose**: Parses the plain text content extracted from `menu.txt` into a structured list of dictionaries.
-        *   **Expected Format**: Each line is expected to be in the format: `"DayOfWeek Month/Day: Entree + Side1, Side2 + SpecialEvent"`.
-        *   **Parsing Logic**: Splits the line by `: ` to separate date and food items. Further splits food items by ` + ` to identify entree, sides (comma-separated), and special events.
-        *   **Output**: Returns a `list[dict]` where each dictionary represents a day's menu entry with keys like `date_str`, `day_of_week`, `entree`, `sides`, `special_event`.
+The PDF is generated via the browser's print dialog using a dedicated CSS print stylesheet (`css/pdf.css`). The app enters **preview mode** (hiding all UI chrome) before printing. The stylesheet uses a warm burgundy/gold/cream palette with the school logo in the header.
 
-### 4.3. Main Script Logic
+### 4.3. Data Backup Format
 
-The `Menu_Gen_Pro.py` orchestrates the fetching and processing.
+The **Export All Data** button produces a JSON file containing all application state:
 
-*   **`Menu_Gen_Pro.py`**:
-    *   **Location**: `Menu_Gen_Pro.py` (lines 12–46, in the Lunch Menu Script directory)
-    *   **Email Configuration**: Defines `EMAIL_SENDER` and `EMAIL_SUBJECT_PREFIX` (can be configured via `.env` in the future).
-    *   **`main()` Function**:
-        *   Calls `setup_dirs()` from `menu_core` to ensure output directories exist.
-        *   Invokes `email_receiver.get_menu_from_email()` to fetch the structured menu data.
-        *   Handles potential errors during email fetching.
-        *   Iterates through the `raw_menu_data` (list of dictionaries) and converts each entry into a `MenuEntry` object (from `menu_core`). This includes converting the `Month/Day` format to a full `YYYY-MM-DD` date string.
-        *   Calls `process_entries()` from `menu_core` to generate the signage slides based on the `MenuEntry` objects.
-        *   Calls `print_summary()` for optional output.
+```json
+{
+  "version": 1,
+  "entreeTiles": [...],
+  "sideTiles": [...],
+  "specialsTiles": [...],
+  "specialEventTiles": [...],
+  "menus": { "2026-9": { "days": {...}, "verse": {...} } },
+  "settings": {...}
+}
+```
 
-## 5. Email Integration Details
+This file can be imported later via **Import Data** to restore the entire application state.
 
-This section details the critical communication link between the two applications.
+## 5. Email Export Details
 
-*   **Communication Protocol**:
-    *   **Sending**: SMTP (Simple Mail Transfer Protocol) over TLS for secure outgoing mail.
-    *   **Receiving**: IMAP (Internet Message Access Protocol) over SSL (IMAPS) for secure incoming mail.
-*   **Attachment Format**: The menu data is sent as a plain text file named `menu.txt`. This simplicity ensures broad compatibility and easy parsing.
+The email export is a standalone feature for sending the monthly text menu directly to a recipient. It does not require any external processing pipeline.
+
+*   **Sending Protocol**: SMTP (Simple Mail Transfer Protocol) over TLS for secure outgoing mail.
+*   **Attachment Format**: The menu data is sent as a plain text file named `menu.txt`.
 *   **Email Content**:
     *   **Sender**: The `EMAIL_USER` configured in the Tauri app's `src-tauri/.env`.
-    *   **Recipient**: The `EMAIL_USER` configured in the Python script's `email_receiver/.env`.
-    *   **Subject Line**: Follows the pattern "Menu Export - Month Year" (e.g., "Menu Export - May 2026"). The Python script searches for emails matching `subject_prefix="Menu Export"`.
+    *   **Recipient**: The address configured in the app's Settings (e.g., an office manager or SIS administrator).
+    *   **Subject Line**: Follows the pattern `Menu Export - Month Year` (e.g., "Menu Export - May 2026").
     *   **Body**: A short explanatory text.
-    *   **Attachment**: `menu.txt` containing the parsed menu data in a line-by-line format: `"DayOfWeek Month/Day: Entree + Side1, Side2 + SpecialEvent"`.
+    *   **Attachment**: `menu.txt` containing the parsed menu data in a line-by-line format.
 *   **Security Considerations**:
-    *   **TLS/SSL**: Both sending (SMTP) and receiving (IMAP) are configured to use TLS/SSL for encrypted communication.
+    *   **TLS**: SMTP is configured to use TLS for encrypted communication.
     *   **App Passwords**: If using email providers with Two-Factor Authentication (2FA) (e.g., Gmail), it is highly recommended to use an "App Password" instead of your main account password for programmatic access. This limits the scope of access in case credentials are compromised.
     *   **Environment Variables**: Credentials are stored in `.env` files and loaded at runtime, preventing them from being hardcoded directly into the source code. These `.env` files should be excluded from version control (`.gitignore`).
 
 ## 6. Development Workflow
 
-### 6.1. Setting Up Development Environments
+### 6.1. Setting Up the Development Environment
 
-**Lunch Program (Tauri App):**
 1.  **Install Rust**: Follow instructions on [rustup.rs](https://rustup.rs/).
 2.  **Install Node.js**: Use a version manager like `nvm` or download from [nodejs.org](https://nodejs.org/).
 3.  **Install Tauri Prerequisites**: Refer to the [Tauri documentation](https://tauri.app/v1/guides/getting-started/prerequisites) for your operating system.
@@ -189,45 +175,30 @@ This section details the critical communication link between the two application
 6.  **Create `.env`**: Create `src-tauri/.env` in the project root and configure `EMAIL_USER`, `EMAIL_PASSWORD`, `SMTP_HOST`, `SMTP_PORT`.
 7.  **Run Development**: `npm run tauri dev`
 
-**Lunch Menu Script (Python):**
-1.  **Install Python 3**: Download from [python.org](https://www.python.org/downloads/).
-2.  **Clone Repository**: `git clone <repository-url>` (or ensure the files are in your working directory).
-3.  **Install Dependencies**: `pip install -r requirements.txt` (if a `requirements.txt` exists, otherwise `pip install python-dotenv`).
-4.  **Create `.env`**: Create `.env` in the script's directory and configure `IMAP_SERVER`, `IMAP_PORT`, `EMAIL_USER`, `EMAIL_PASSWORD`.
-5.  **Run Script**: `python Menu_Gen_Pro.py`
-
 ### 6.2. Testing Procedures
 
-*   **Unit Tests**: Implement unit tests for the email parsing logic in `email_receiver.py` and the email sending Rust command.
+*   **Unit Tests**: Implement unit tests for the email sending Rust command.
 *   **Integration Tests**:
     1.  Start the Tauri app in development mode.
     2.  Generate a menu and send the TXT export.
-    3.  Manually (or via an automated test runner) execute `Menu_Gen_Pro.py` and verify that it correctly fetches and processes the email, and generates the expected output.
-*   **Manual Testing**: Ensure the entire flow from menu creation in the Tauri app to final signage generation by the Python script works as expected.
+    3.  Verify the email arrives at the configured recipient with the `menu.txt` attachment.
+*   **Manual Testing**: Ensure the full flow from menu creation to print preview and email export works as expected.
 
 ### 6.3. Troubleshooting Common Issues
 
-*   **Email Sending Failures (Tauri)**:
+*   **Email Sending Failures**:
     *   Check `src-tauri/.env` for correct credentials and SMTP server details.
     *   Verify network connectivity to the SMTP server.
     *   Check if your email provider requires "App Passwords" for programmatic access.
     *   Review Tauri app console logs for Rust backend errors related to email sending.
-*   **Email Receiving Failures (Python)**:
-    *   Check the `.env` file in the script's directory for correct IMAP server, port, credentials.
-    *   Ensure the `sender_email` and `subject_prefix` in `get_menu_from_email` match the email sent by the Tauri app.
-    *   Verify network connectivity to the IMAP server.
-    *   Check if the email actually arrived in the inbox and contains the `menu.txt` attachment.
-    *   Review Python script console output for IMAP connection or parsing errors.
 *   **Incorrect Menu Data**:
-    *   Inspect the `menu.txt` attachment sent by the Tauri app to ensure its format is correct.
-    *   Debug `email_receiver.parse_menu_content` to ensure it's correctly interpreting the `menu.txt` content.
+    *   Inspect the `menu.txt` attachment to ensure its format is correct.
+    *   Check that weekends and NO SCHOOL days are properly excluded.
 
 ## 7. Future Enhancements / Considerations
 
-*   **Richer Data Format**: Instead of plain text, consider sending menu data in a structured format like JSON within the email attachment. This would make parsing more robust and less prone to errors from format variations.
-*   **Dedicated API Endpoint**: For more robust and real-time integration, a dedicated API endpoint (e.g., a small web service) could be exposed by the Python script (or a separate service) for the Tauri app to send data directly, bypassing email. This would offer better error handling, immediate feedback, and potentially more secure authentication.
-*   **Error Reporting**: Implement more sophisticated error logging and reporting for both applications, potentially integrating with a centralized logging service.
-*   **Configuration UI**: For the Tauri app, provide a UI in settings to configure email sending parameters rather than relying solely on the `.env` file.
+*   **Richer Data Format**: Consider sending menu data in JSON format within the email attachment for easier machine parsing.
+*   **Error Reporting**: Implement more sophisticated error logging and reporting, potentially integrating with a centralized logging service.
+*   **Configuration UI**: Provide a UI in Settings to configure email sending parameters rather than relying solely on the `.env` file.
 *   **PDF Handling**: Implement Rust-side logic to attach the generated PDF directly to the email from the Tauri app, instead of relying on `mailto:` for PDF exports.
 *   **Security Audit**: Conduct a security audit of the email credential handling and network communication to ensure best practices are followed, especially if deployed in a production environment.
-*   **Scalability**: For very high volumes of menu updates or multiple receiving scripts, consider message queues (e.g., RabbitMQ, Kafka) as an intermediary instead of direct email for more reliable and scalable communication.
