@@ -1,4 +1,14 @@
 /**
+ * Tauri v2 compatibility: withGlobalTauri exposes invoke under
+ * window.__TAURI__.core.invoke (the v1-style window.__TAURI__.invoke does not
+ * exist in Tauri v2). Alias it once here so every existing call site works
+ * unchanged in the desktop app.
+ */
+if (typeof window !== 'undefined' && window.__TAURI__ && window.__TAURI__.core && typeof window.__TAURI__.invoke !== 'function') {
+    window.__TAURI__.invoke = window.__TAURI__.core.invoke;
+}
+
+/**
  * State Management & LocalStorage Persistence
  */
 

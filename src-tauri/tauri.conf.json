@@ -4,7 +4,7 @@
   "version": "1.0.1",
   "identifier": "com.school.lunchmenu",
   "build": {
-    "beforeBuildCommand": "powershell -Command \"if (!(Test-Path dist)) { New-Item -ItemType Directory -Path dist }; Copy-Item -Path index.html,css,js,data -Destination dist -Recurse -Force\"",
+    "beforeBuildCommand": "node scripts/sync-dist.js",
     "beforeDevCommand": "",
     "devUrl": "http://localhost:1420",
     "frontendDist": "../dist"

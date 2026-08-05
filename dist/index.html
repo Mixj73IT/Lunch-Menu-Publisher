@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;600;700&family=Dancing+Script:wght@400;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/app.css?v=3">
+    <link rel="stylesheet" href="css/app.css?v=6">
     <link rel="stylesheet" href="css/pdf.css?v=3" media="print">
 </head>
 <body>
@@ -43,8 +43,8 @@
             <aside class="panel panel-left no-print" id="entreePanel">
                 <div class="panel-header">
                     <div class="panel-header-actions">
-                        <button class="add-btn" data-type="entree" title="Add new entrée"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="8" y1="3" x2="8" y2="13"/><line x1="3" y1="8" x2="13" y2="8"/></svg></button>
-                        <button class="collapse-btn" data-panel="entree"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6,3 11,8 6,13"/></svg></button>
+                        <button class="add-btn" data-type="entree" title="Add new entrée" aria-label="Add new entrée"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="8" y1="3" x2="8" y2="13"/><line x1="3" y1="8" x2="13" y2="8"/></svg></button>
+                        <button class="collapse-btn" data-panel="entree" aria-label="Collapse or expand Entrées panel"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6,3 11,8 6,13"/></svg></button>
                     </div>
                     <h2>Entrées</h2>
                 </div>
@@ -59,8 +59,8 @@
             <aside class="panel panel-left panel-specials no-print collapsed" id="specialsPanel">
                 <div class="panel-header">
                     <div class="panel-header-actions">
-                        <button class="add-btn" data-type="specials" title="Add new special"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="8" y1="3" x2="8" y2="13"/><line x1="3" y1="8" x2="13" y2="8"/></svg></button>
-                        <button class="collapse-btn" data-panel="specials"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6,3 11,8 6,13"/></svg></button>
+                        <button class="add-btn" data-type="specials" title="Add new special" aria-label="Add new special"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="8" y1="3" x2="8" y2="13"/><line x1="3" y1="8" x2="13" y2="8"/></svg></button>
+                        <button class="collapse-btn" data-panel="specials" aria-label="Collapse or expand Specials panel"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6,3 11,8 6,13"/></svg></button>
                     </div>
                     <h2>Specials</h2>
                     <p class="panel-helper">For teachers &amp; 12th-grade students</p>
@@ -99,8 +99,8 @@
             <aside class="panel panel-right no-print" id="sidePanel">
                 <div class="panel-header">
                     <div class="panel-header-actions">
-                        <button class="add-btn" data-type="side" title="Add new side"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="8" y1="3" x2="8" y2="13"/><line x1="3" y1="8" x2="13" y2="8"/></svg></button>
-                        <button class="collapse-btn" data-panel="side"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6,3 11,8 6,13"/></svg></button>
+                        <button class="add-btn" data-type="side" title="Add new side" aria-label="Add new side"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="8" y1="3" x2="8" y2="13"/><line x1="3" y1="8" x2="13" y2="8"/></svg></button>
+                        <button class="collapse-btn" data-panel="side" aria-label="Collapse or expand Sides panel"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6,3 11,8 6,13"/></svg></button>
                     </div>
                     <h2>Sides</h2>
                 </div>
@@ -115,8 +115,8 @@
             <aside class="panel panel-special no-print collapsed" id="specialPanel">
                 <div class="panel-header">
                     <div class="panel-header-actions">
-                        <button class="add-btn" data-type="specialEvent" title="Add new special event"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="8" y1="3" x2="8" y2="13"/><line x1="3" y1="8" x2="13" y2="8"/></svg></button>
-                        <button class="collapse-btn" data-panel="special"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6,3 11,8 6,13"/></svg></button>
+                        <button class="add-btn" data-type="specialEvent" title="Add new special event" aria-label="Add new special event"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="8" y1="3" x2="8" y2="13"/><line x1="3" y1="8" x2="13" y2="8"/></svg></button>
+                        <button class="collapse-btn" data-panel="special" aria-label="Collapse or expand Special Events panel"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6,3 11,8 6,13"/></svg></button>
                     </div>
                     <h2>Special Events</h2>
                 </div>

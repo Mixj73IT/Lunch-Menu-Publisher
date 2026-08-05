@@ -117,7 +117,7 @@ async fn test_smtp_connection(
 
 /// Send the Publish Month email: a short body, the menu.txt attachment, and
 /// (only when a real PDF was generated) the menu.pdf attachment.
-#[tauri::command]
+#[tauri::command(rename_all = "snake_case")]
 async fn send_publish_email(
     recipient: String,
     subject: String,
@@ -132,7 +132,7 @@ async fn send_publish_email(
     smtp_password: Option<String>,
 ) -> Result<String, String> {
     let (mailer, email_user) = build_mailer(smtp_host, smtp_port, smtp_user, smtp_password)?;
-    let email_from = format!("{email_user} <{email_user}>");
+    let email_from = email_user.clone();
 
     let mut multipart = MultiPart::mixed().singlepart(SinglePart::plain(body.clone()));
 
@@ -294,7 +294,7 @@ fn write_output_file_to_dir(
 
 /// Write an output file (PDF or TXT) atomically. When `directory` is empty the
 /// file goes to the user's Downloads folder.
-#[tauri::command]
+#[tauri::command(rename_all = "snake_case")]
 async fn write_output_file(
     app: tauri::AppHandle,
     directory: String,

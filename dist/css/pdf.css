@@ -197,7 +197,7 @@
     
     .calendar-grid {
         display: grid !important;
-        grid-template-columns: 0.5fr 1.9fr 1.9fr 1.9fr 1.9fr 1.9fr 0.5fr !important;
+        grid-template-columns: 0.4fr 1.9fr 1.9fr 1.9fr 1.9fr 1.9fr 0.4fr !important;
         gap: 1px !important;
         background: var(--pdf-border) !important;
         border: 1px solid var(--pdf-border) !important;
