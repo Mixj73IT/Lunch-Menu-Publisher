@@ -5,9 +5,13 @@
   "scripts": {
     "tauri": "tauri",
     "build": "tauri build",
-    "dev": "tauri dev"
+    "dev": "tauri dev",
+    "dev:server": "npx serve . -l 1420"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^1.5.0"
+    "@tauri-apps/cli": "^2.0.0",
+    "serve": "^14.2.6",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^2.5.1"
   }
 }

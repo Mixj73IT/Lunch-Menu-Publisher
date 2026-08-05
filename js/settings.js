@@ -74,6 +74,51 @@ const Settings = {
             State.saveTxtEmail(prev);
         });
 
+        const smtpHost = $('smtpHostInput');
+        if (smtpHost) smtpHost.addEventListener('change', (e) => {
+            const prev = State.smtpHost;
+            State.smtpHost = e.target.value;
+            State.saveSmtpHost(prev);
+            State.showSaved();
+        });
+
+        const smtpPort = $('smtpPortInput');
+        if (smtpPort) smtpPort.addEventListener('change', (e) => {
+            const prev = State.smtpPort;
+            const parsed = parseInt(e.target.value, 10);
+            State.smtpPort = Number.isFinite(parsed) && parsed > 0 ? parsed : 587;
+            State.saveSmtpPort(prev);
+            State.showSaved();
+        });
+
+        const smtpUser = $('smtpUserInput');
+        if (smtpUser) smtpUser.addEventListener('change', (e) => {
+            const prev = State.smtpUser;
+            State.smtpUser = e.target.value;
+            State.saveSmtpUser(prev);
+            State.showSaved();
+        });
+
+        const smtpPassword = $('smtpPasswordInput');
+        if (smtpPassword) smtpPassword.addEventListener('change', (e) => {
+            const prev = State.smtpPassword;
+            State.smtpPassword = e.target.value;
+            State.saveSmtpPassword(prev);
+            State.showSaved();
+        });
+
+        const testConnectionBtn = $('testConnectionBtn');
+        if (testConnectionBtn) testConnectionBtn.addEventListener('click', async () => {
+            // Read the live input values: the 'change' event only fires on blur,
+            // so a just-typed value may not be persisted to State yet.
+            const host = smtpHost ? smtpHost.value : State.smtpHost;
+            const rawPort = smtpPort ? parseInt(smtpPort.value, 10) : NaN;
+            const port = Number.isFinite(rawPort) && rawPort > 0 ? rawPort : State.smtpPort;
+            const user = smtpUser ? smtpUser.value : State.smtpUser;
+            const password = smtpPassword ? smtpPassword.value : State.smtpPassword;
+            await State.testSmtpConnection(host, port, user, password);
+        });
+
         // Export/Import data (optional elements)
         const exportBtn = $('exportDataBtn');
         if (exportBtn) exportBtn.addEventListener('click', () => {
@@ -109,11 +154,76 @@ const Settings = {
         if (pdfInput) pdfInput.value = State.pdfEmail;
         const txtInput = $('txtEmailInput');
         if (txtInput) txtInput.value = State.txtEmail;
+        const smtpHost = $('smtpHostInput');
+        if (smtpHost) smtpHost.value = State.smtpHost;
+        const smtpPort = $('smtpPortInput');
+        if (smtpPort) smtpPort.value = State.smtpPort;
+        const smtpUser = $('smtpUserInput');
+        if (smtpUser) smtpUser.value = State.smtpUser;
+        const smtpPassword = $('smtpPasswordInput');
+        if (smtpPassword) smtpPassword.value = State.smtpPassword;
+        
+        // Focus trap setup
+        this.previouslyFocused = document.activeElement;
+        this.setupFocusTrap(modal);
+        
         modal.style.display = 'flex';
     },
 
     close() {
-        document.getElementById('settingsModal').style.display = 'none';
+        const modal = document.getElementById('settingsModal');
+        if (!modal) return;
+        modal.style.display = 'none';
+        
+        // Restore focus
+        if (this.previouslyFocused && this.previouslyFocused.focus) {
+            this.previouslyFocused.focus();
+        }
+        
+        // Clean up focus trap
+        this.removeFocusTrap();
+    },
+
+    setupFocusTrap(modal) {
+        // Add keydown listener to trap focus within modal
+        const trapFocus = (e) => {
+            if (e.key !== 'Tab') return;
+            
+            const focusableElements = Array.from(
+                modal.querySelectorAll(
+                    'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])'
+                )
+            );
+            
+            if (focusableElements.length === 0) return;
+            
+            const firstElement = focusableElements[0];
+            const lastElement = focusableElements[focusableElements.length - 1];
+            const isShift = e.shiftKey;
+            
+            if (isShift && document.activeElement === firstElement) {
+                e.preventDefault();
+                lastElement.focus();
+            } else if (!isShift && document.activeElement === lastElement) {
+                e.preventDefault();
+                firstElement.focus();
+            }
+        };
+        
+        modal.addEventListener('keydown', trapFocus);
+        
+        // Store reference for cleanup
+        this._focusTrapListener = trapFocus;
+    },
+
+    removeFocusTrap() {
+        if (this._focusTrapListener) {
+            const modal = document.getElementById('settingsModal');
+            if (modal) {
+                modal.removeEventListener('keydown', this._focusTrapListener);
+            }
+            this._focusTrapListener = null;
+        }
     },
 
     applySettings() {

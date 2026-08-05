@@ -1,59 +1,15 @@
 {
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Lunch Menu Publisher",
+  "version": "1.0.0",
+  "identifier": "com.school.lunchmenu",
   "build": {
     "beforeBuildCommand": "powershell -Command \"if (!(Test-Path dist)) { New-Item -ItemType Directory -Path dist }; Copy-Item -Path index.html,css,js,data -Destination dist -Recurse -Force\"",
     "beforeDevCommand": "",
-    "devPath": "../index.html",
-    "distDir": "../dist",
-    "withGlobalTauri": true
+    "devUrl": "http://localhost:1420",
+    "frontendDist": "../dist"
   },
-  "tauri": {
-    "allowlist": {
-      "shell": {
-        "open": true
-      }
-    },
-    "bundle": {
-      "active": true,
-      "category": "Productivity",
-      "copyright": "© 2026 Jr. Haynes. Licensed under MIT.",
-      "deb": {
-        "depends": []
-      },
-      "externalBin": [],
-      "icon": [
-        "icons/icon.ico",
-        "icons/icon_32x32.png",
-        "icons/icon_64x64.png",
-        "icons/icon_128x128.png",
-        "icons/icon_256x256.png"
-      ],
-      "identifier": "com.school.lunchmenu",
-      "longDescription": "A professional lunch menu publisher for schools",
-      "macOS": {
-        "entitlements": null,
-        "exceptionDomain": "",
-        "frameworks": [],
-        "providerShortName": null,
-        "signingIdentity": null
-      },
-      "resources": [],
-      "shortDescription": "Lunch Menu Publisher",
-      "targets": "msi",
-      "windows": {
-        "certificateThumbprint": null,
-        "digestAlgorithm": "sha256",
-        "timestampUrl": "",
-        "webviewInstallMode": {
-          "type": "embedBootstrapper"
-        }
-      }
-    },
-    "security": {
-      "csp": "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com;"
-    },
-    "updater": {
-      "active": false
-    },
+  "app": {
     "windows": [
       {
         "fullscreen": false,
@@ -65,6 +21,37 @@
         "minWidth": 1200,
         "minHeight": 700
       }
-    ]
+    ],
+    "security": {
+      "csp": "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' tauri:;"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "msi",
+    "icon": [
+      "icons/icon.ico",
+      "icons/icon_32x32.png",
+      "icons/icon_64x64.png",
+      "icons/icon_128x128.png",
+      "icons/icon_256x256.png"
+    ],
+    "windows": {
+      "certificateThumbprint": null,
+      "digestAlgorithm": "sha256",
+      "timestampUrl": "",
+      "webviewInstallMode": {
+        "type": "embedBootstrapper"
+      }
+    },
+    "category": "Productivity",
+    "shortDescription": "Lunch Menu Publisher",
+    "longDescription": "A professional lunch menu publisher for schools",
+    "copyright": "© 2026 Jr. Haynes. Licensed under MIT."
+  },
+  "plugins": {
+    "shell": {
+      "open": true
+    }
   }
 }

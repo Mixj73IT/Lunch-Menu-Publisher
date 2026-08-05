@@ -19,6 +19,11 @@ npm-debug.log*
 
 # Secrets
 .env
+.env.local
+.env.*.local
+*.pem
+*.key
+.env
 
 # Artifacts
 nul
@@ -26,3 +31,6 @@ nul
 # Raw Bible data (processed versions are in data/)
 kjv.json
 kjv-cleaned.json
+
+# Build output
+dist/

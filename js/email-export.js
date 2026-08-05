@@ -7,31 +7,72 @@
  */
 
 const EmailExport = {
+    isTauri: false,
+
     init() {
+        // Detect Tauri availability once at init
+        this.isTauri = !!(window.__TAURI__?.invoke);
         this.setupEventListeners();
     },
 
     setupEventListeners() {
         const emailPdfBtn = document.getElementById('emailPdfBtn');
-        if (!emailPdfBtn) return;
-        emailPdfBtn.addEventListener('click', () => this.emailPdf());
-        document.getElementById('emailTxtBtn').addEventListener('click', () => this.emailTxt());
+        if (emailPdfBtn) emailPdfBtn.addEventListener('click', () => this.emailPdf());
+        const emailTxtBtn = document.getElementById('emailTxtBtn');
+        if (emailTxtBtn) emailTxtBtn.addEventListener('click', () => this.emailTxt());
+    },
+
+    /**
+     * SMTP config from Settings, sent to the Rust backend with every email.
+     * The backend falls back to .env values when these are empty.
+     */
+    smtpArgs() {
+        return {
+            smtpHost: State.smtpHost || null,
+            smtpPort: State.smtpPort || null,
+            smtpUser: State.smtpUser || null,
+            smtpPassword: State.smtpPassword || null
+        };
     },
 
     /**
      * Email the PDF export
-     * Opens email client with recipient pre-filled
-     * Note: Web browsers cannot attach files directly
-     * For Tauri, you would need a separate Rust command to handle PDF attachment and sending.
+     * Uses Tauri command to send PDF attachment
      */
-    emailPdf() {
+    async emailPdf() {
         const recipient = State.pdfEmail;
-        const monthName = this.getMonthName(State.currentMonth);
-        const subject = `Lunch Menu - ${monthName} ${State.currentYear}`;
-        const body = `Please find attached the lunch menu for ${monthName} ${State.currentYear}.\n\n(Note: In web version, please attach the PDF manually after printing. In Tauri desktop app, the file will be attached automatically.)`;
+        if (!recipient) {
+            alert('Please set a default email recipient in Settings first.');
+            return;
+        }
 
-        // Fallback to mailto for PDF for now, or implement a separate Tauri command for PDF sending
-        this.openEmailClientMailto(recipient, subject, body);
+        const monthName = getMonthName(State.currentMonth);
+        const subject = `Lunch Menu - ${monthName} ${State.currentYear}`;
+
+        try {
+            if (this.isTauri) {
+                // Generate PDF and send via Tauri
+                const pdfBlob = await PdfExport.generatePdf();
+                const base64 = await PdfExport.blobToBase64(pdfBlob);
+
+                await window.__TAURI__.invoke('send_pdf_email', {
+                    recipient: recipient,
+                    subject: subject,
+                    pdfBase64: base64,
+                    ...this.smtpArgs()
+                });
+                alert('PDF email sent successfully via Tauri!');
+            } else {
+                // Web fallback: open mailto with PDF generation instructions
+                const body = `Please find attached the lunch menu PDF for ${monthName} ${State.currentYear}.
+
+(Note: In web version, please generate and attach the PDF manually.)`;
+                this.openEmailClientMailto(recipient, subject, body);
+            }
+        } catch (error) {
+            console.error('PDF email send failed:', error);
+            alert('Failed to send email. Please check your SMTP settings and try again.');
+        }
     },
 
     /**
@@ -45,27 +86,29 @@ const EmailExport = {
         }
 
         const exportContent = TextExport.generateExport();
-        const monthName = this.getMonthName(State.currentMonth);
+        const monthName = getMonthName(State.currentMonth);
         const subject = `Menu Export - ${monthName} ${State.currentYear}`;
 
         try {
-            // Call the Rust command to send the email (Tauri desktop only)
-            const tauriInvoke = window.__TAURI__?.tauri?.invoke;
-            if (tauriInvoke) {
-                await tauriInvoke('send_menu_email', {
+            if (this.isTauri) {
+                await window.__TAURI__.invoke('send_menu_email', {
                     recipient: recipient,
                     subject: subject,
                     menuContent: exportContent,
+                    ...this.smtpArgs()
                 });
                 alert('Email sent successfully via Tauri!');
             } else {
                 // Fallback: open mailto with the content
-                const body = `Please find attached the menu export for ${monthName} ${State.currentYear}.\n\n--- Menu Export Content ---\n${exportContent}`;
+                const body = `Please find attached the menu export for ${monthName} ${State.currentYear}.
+
+--- Menu Export Content ---
+${exportContent}`;
                 this.openEmailClientMailto(recipient, subject, body);
             }
         } catch (error) {
-            // Failed to send email — user already notified via alert
-            alert(`Failed to send email: ${error}`);
+            console.error('TXT email send failed:', error);
+            alert('Failed to send email. Please check your SMTP settings and try again.');
         }
     },
 
@@ -85,15 +128,5 @@ const EmailExport = {
         window.location.href = mailtoLink;
     },
 
-    /**
-     * Get month name from month number (0-11)
-     */
-    getMonthName(month) {
-        const months = [
-            'January', 'February', 'March', 'April', 'May', 'June',
-            'July', 'August', 'September', 'October', 'November', 'December'
-        ];
-        return months[month];
-    }
 };
 

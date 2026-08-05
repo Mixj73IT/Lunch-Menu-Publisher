@@ -923,6 +923,13 @@ body.preview-mode #printPreviewBtn {
     height: 18px;
 }
 
+.setting-hint {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.85em;
+    opacity: 0.75;
+}
+
 /* Verse Selector */
 .verse-tabs {
     display: flex;
@@ -1008,6 +1015,11 @@ body.preview-mode #printPreviewBtn {
    PRINT-ONLY HEADER (hidden in app, shown in preview/print)
    ======================================== */
 .print-header {
+    display: none;
+}
+
+/* Collapse the school name when no name has been configured */
+.print-school-name:empty {
     display: none;
 }
 

@@ -19,17 +19,17 @@
             <div class="header-left">
                 <h1>Lunch Menu Publisher</h1>
                 <div class="month-selector">
-                    <button id="prevMonth">&lt;</button>
+                    <button id="prevMonth" aria-label="Previous month">&lt;</button>
                     <span id="currentMonthLabel">September 2025</span>
-                    <button id="nextMonth">&gt;</button>
+                    <button id="nextMonth" aria-label="Next month">&gt;</button>
                 </div>
             </div>
             <div class="header-right">
-                <button id="previewBtn" class="btn btn-primary">Preview</button>
-                <button id="emailPdfBtn" class="btn btn-secondary no-print">Email PDF</button>
-                <button id="exportBtn" class="btn btn-secondary">Text Export</button>
-                <button id="emailTxtBtn" class="btn btn-secondary no-print">Email TXT</button>
-                <button id="settingsBtn" class="btn btn-icon" title="Settings">
+                <button id="previewBtn" class="btn btn-primary" aria-label="Open preview">Preview</button>
+                <button id="emailPdfBtn" class="btn btn-secondary no-print" aria-label="Email PDF">Email PDF</button>
+                <button id="exportBtn" class="btn btn-secondary" aria-label="Export text">Text Export</button>
+                <button id="emailTxtBtn" class="btn btn-secondary no-print" aria-label="Email TXT">Email TXT</button>
+                <button id="settingsBtn" class="btn btn-icon" title="Settings" aria-label="Open settings">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="3"></circle>
                         <path d="M12 1v6m0 6v6m4.22-10.22l4.24-4.24M6.34 17.66l-4.24 4.24M23 12h-6m-6 0H1m20.24 4.24l-4.24-4.24M6.34 6.34L2.1 2.1"></path>
@@ -71,6 +71,14 @@
                 </div>
             </aside>
 
+            <!-- Print/PDF header: logo + school name (hidden in the app, shown in preview & PDF) -->
+            <div class="print-header">
+                <img class="print-logo" src="images/logo.png" alt="School logo">
+                <div class="print-header-text">
+                    <span class="print-school-name" id="printSchoolName"></span>
+                </div>
+            </div>
+
             <!-- Center: Calendar -->
             <section class="calendar-container" id="calendarContainer">
                 <div class="calendar-header">
@@ -79,7 +87,7 @@
                         <p class="verse-text" id="verseText"></p>
                         <p class="verse-ref" id="verseRef"></p>
                     </div>
-                    <button id="selectVerseBtn" class="btn btn-secondary btn-sm no-print">Select Verse</button>
+                    <button id="selectVerseBtn" class="btn btn-secondary btn-sm no-print" aria-label="Select verse">Select Verse</button>
                 </div>
                 <div class="calendar-grid" id="calendarGrid">
                     <!-- Calendar populated by JS -->
@@ -120,11 +128,13 @@
         </main>
 
         <!-- Settings Modal -->
-        <div id="settingsModal" class="modal no-print" style="display: none;">
+        <div id="settingsModal" class="modal no-print" role="dialog" aria-modal="true" aria-labelledby="settingsModalTitle" style="display: none;">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2>Settings</h2>
-                    <button class="close-btn" id="closeSettings">&times;</button>
+                    <h2 id="settingsModalTitle">Settings</h2>
+                    <button class="close-btn" id="closeSettings" aria-label="Close settings">
+                        &times;
+                    </button>
                 </div>
                 <div class="modal-body">
                     <label class="setting-item">
@@ -149,6 +159,27 @@
                     </div>
                     <hr>
                     <div class="setting-item">
+                        <label for="smtpHostInput">SMTP Host:</label>
+                        <input type="text" id="smtpHostInput" placeholder="smtp.example.com">
+                    </div>
+                    <div class="setting-item">
+                        <label for="smtpPortInput">SMTP Port:</label>
+                        <input type="number" id="smtpPortInput" placeholder="587" min="1" max="65535">
+                    </div>
+                    <div class="setting-item">
+                        <label for="smtpUserInput">Email User:</label>
+                        <input type="email" id="smtpUserInput" placeholder="your-email@example.com">
+                    </div>
+                    <div class="setting-item">
+                        <label for="smtpPasswordInput">Email Password:</label>
+                        <input type="password" id="smtpPasswordInput" placeholder="password" autocomplete="new-password" autocapitalize="off" autocorrect="off" spellcheck="false">
+                        <small class="setting-hint">Stored locally on this device. Use an app-specific password, not your main account password.</small>
+                    </div>
+                    <div class="setting-item">
+                        <button id="testConnectionBtn" class="btn btn-secondary">Test Connection</button>
+                    </div>
+                    <hr>
+                    <div class="setting-item">
                         <button id="exportDataBtn" class="btn btn-secondary">Export All Data</button>
                         <button id="importDataBtn" class="btn btn-secondary">Import Data</button>
                         <input type="file" id="importDataFile" accept=".json" style="display:none;">
@@ -158,11 +189,13 @@
         </div>
 
         <!-- Verse Selector Modal -->
-        <div id="verseModal" class="modal no-print" style="display: none;">
+        <div id="verseModal" class="modal no-print" role="dialog" aria-modal="true" aria-labelledby="verseModalTitle" style="display: none;">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2>Select Verse</h2>
-                    <button class="close-btn" id="closeVerse">&times;</button>
+                    <h2 id="verseModalTitle">Select Verse</h2>
+                    <button class="close-btn" id="closeVerse" aria-label="Close verse selector">
+                        &times;
+                    </button>
                 </div>
                 <div class="modal-body">
                     <div class="verse-tabs">
@@ -176,19 +209,21 @@
                         <select id="bookSelect"><option>Select Book...</option></select>
                         <select id="chapterSelect" disabled><option>Chapter</option></select>
                         <select id="verseSelect" disabled><option>Verse</option></select>
-                        <button id="selectAdvancedVerse" class="btn btn-primary">Select</button>
+                        <button id="selectAdvancedVerse" class="btn btn-primary" aria-label="Select verse">Select</button>
                     </div>
-                    <button id="noVerseBtn" class="btn btn-secondary">No Verse</button>
+                    <button id="noVerseBtn" class="btn btn-secondary" aria-label="No verse">No Verse</button>
                 </div>
             </div>
         </div>
 
         <!-- Text Export Modal -->
-        <div id="exportModal" class="modal no-print" style="display: none;">
+        <div id="exportModal" class="modal no-print" role="dialog" aria-modal="true" aria-labelledby="exportModalTitle" style="display: none;">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2>Text Export</h2>
-                    <button class="close-btn" id="closeExport">&times;</button>
+                    <h2 id="exportModalTitle">Text Export</h2>
+                    <button class="close-btn" id="closeExport" aria-label="Close export modal">
+                        &times;
+                    </button>
                 </div>
                 <div class="modal-body">
                     <p>Copy this text and paste into your SIS:</p>
@@ -201,6 +236,8 @@
     </div>
 
     <!-- Scripts -->
+    <script src="js/vendor/jspdf.umd.min.js" defer></script>
+    <script src="js/vendor/html2canvas.min.js" defer></script>
     <script src="js/state.js" defer></script>
     <script src="js/tiles.js" defer></script>
     <script src="js/calendar.js" defer></script>
@@ -209,6 +246,7 @@
     <script src="js/settings.js?v=2" defer></script>
     <script src="js/text-export.js" defer></script>
     <script src="js/email-export.js" defer></script>
+    <script src="js/pdf-export.js" defer></script>
     <script src="js/app.js?v=2" defer></script>
 </body>
 </html>

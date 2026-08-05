@@ -8,15 +8,16 @@ repository = "https://github.com/Mixj73IT/lunch-menu-publisher"
 edition = "2021"
 
 [build-dependencies]
-tauri-build = { version = "1.5.0", features = [] }
+tauri-build = { version = "2.6.3", features = [] }
 
 [dependencies]
-tauri = { version = "1.5.0", features = ["shell-open"] }
+tauri = { version = "2.11.5", features = ["process-relaunch-dangerous-allow-symlink-macos"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 lettre = { version = "0.11", default-features = false, features = ["builder", "smtp-transport", "rustls-tls"] }
-tokio = { version = "1.36.0", features = ["full"] }
+tokio = { version = "1.53.1", features = ["full"] }
 dotenv = "0.15"
+base64 = "0.23"
 
 [features]
 default = ["custom-protocol"]
