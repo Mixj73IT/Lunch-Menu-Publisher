@@ -10,16 +10,18 @@
     --font-sans: 'Open Sans', sans-serif;
     --font-script: 'Dancing Script', cursive;
 
-    --day-normal-bg: #ffffff;
-    --day-weekend-bg: #e8eaed;
-    --day-noschool-bg: #d1d5db;
+    --day-normal-bg: #fffdf8;
+    --day-weekend-bg: #f1ece1;
+    --day-noschool-bg: #dcd2bf;
 
-    --color-bg: #f8f9fa;
-    --color-panel: #ffffff;
-    --color-border: #dee2e6;
-    --color-text: #212529;
-    --color-text-muted: #6c757d;
-    --color-accent: #0d6efd;
+    --color-bg: #faf6ee;
+    --color-panel: #fffdf8;
+    --color-panel-header: #fbf6ea;
+    --color-border: #e7ddcd;
+    --color-text: #2c2420;
+    --color-text-muted: #7a6b5d;
+    --color-accent: #8B1A1A;
+    --color-accent-dark: #6d1414;
 
     --color-noschool-bg: #4a4a4a;
     --color-noschool-text: #ffffff;
@@ -58,7 +60,7 @@ body {
     font-family: var(--ui-font);
     font-size: 14px;
     line-height: 1.4;
-    color: #212529;
+    color: var(--color-text);
     background: var(--color-bg);
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
@@ -141,7 +143,7 @@ body {
 }
 
 .btn-primary:hover {
-    background: #3a4558;
+    background: var(--color-accent-dark);
 }
 
 .btn-secondary {
@@ -150,7 +152,7 @@ body {
 }
 
 .btn-secondary:hover {
-    background: #c0c0b8;
+    background: #e6dcc4;
 }
 
 .btn-sm {
@@ -305,7 +307,7 @@ body {
 }
 
 .add-btn:hover {
-    background: #0b5ed7;
+    background: var(--color-accent-dark);
 }
 
 .collapse-btn {
@@ -402,7 +404,7 @@ body {
     line-height: 1;
 }
 
-.tile.entree::before { content: "🍽️  Entree"; }
+.tile.entree::before { content: "🍽️  Entrée"; }
 .tile.side::before    { content: "🥗  Side"; }
 .tile.specials::before    { content: "⭐  Special"; }
 .tile.special::before,
@@ -511,10 +513,19 @@ body {
     margin-bottom: 20px;
 }
 
+/* Editing mode: warm hairline under the month header, mirroring the printed page */
+body:not(.preview-mode) .calendar-header {
+    padding-bottom: 14px;
+    border-bottom: 1px solid #eadfc6;
+    margin-bottom: 16px;
+}
+
 .month-title {
     font-family: var(--font-serif);
     font-size: 2rem;
     font-weight: 700;
+    color: var(--color-accent);
+    letter-spacing: 0.5px;
     margin-bottom: 15px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -528,7 +539,7 @@ body {
 .verse-text {
     font-family: var(--font-script);
     font-size: 2.4rem;
-    color: var(--color-text);
+    color: var(--pdf-text-brown, #5a4a3a);
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -547,7 +558,8 @@ body {
    ======================================== */
 .calendar-grid {
     display: grid;
-    grid-template-columns: 100px 1.5fr 1.5fr 1.5fr 1.5fr 1.5fr 100px;
+    /* Weekends (Sun/Sat) are slim rails - just the date plus a few px; weekdays get the space */
+    grid-template-columns: 36px 1.5fr 1.5fr 1.5fr 1.5fr 1.5fr 36px;
     gap: 1px;
     background: var(--color-border);
     border: 1px solid var(--color-border);
@@ -555,11 +567,13 @@ body {
 
 .day-header {
     background: var(--color-accent);
-    color: white;
-    padding: 10px;
+    color: var(--pdf-cream, #fdf8f0);
+    padding: 8px 4px;
     text-align: center;
-    font-weight: 600;
-    font-size: 0.9rem;
+    font-weight: 700;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
 }
 
 .day-cell {
@@ -573,26 +587,28 @@ body {
 }
 
 .day-cell:hover {
-    background: #fafafa;
+    background: #fdf6e8;
 }
 
-/* Weekend cells - narrower visually via different proportions */
+/* Weekend cells - slim rails, just the date */
 .day-cell.weekend {
     background: var(--day-weekend-bg);
+    padding: 8px 4px;
+    text-align: center;
 }
 
 .day-cell.weekend .day-number {
-    color: #212529;
+    color: var(--color-text);
 }
 
 /* NO SCHOOL state */
 .day-cell.no-school {
     background: var(--day-noschool-bg);
-    color: #212529;
+    color: var(--color-text);
 }
 
 .day-cell.no-school .day-number {
-    color: #212529;
+    color: var(--color-text);
 }
 .day-cell.no-school .day-content {
     display: none;
@@ -623,7 +639,7 @@ body {
     letter-spacing: 0.08em;
     font-weight: 700;
     opacity: 1;
-    color: #000;
+    color: var(--color-accent);
     position: absolute;
     top: 50%;
     left: 50%;
@@ -639,7 +655,7 @@ body {
 }
 
 .day-cell.no-school .day-number {
-    color: #212529;
+    color: var(--color-text);
 }
 
 .ns-toggle {
@@ -684,8 +700,9 @@ body {
 }
 
 .day-content {
-    font-size: inherit;
-    line-height: 1.35;
+    font-family: var(--font-serif);
+    font-size: 0.98em;
+    line-height: 1.32;
     font-weight: 500;
 }
 
@@ -868,7 +885,7 @@ body.preview-mode #printPreviewBtn {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0,0,0,0.5);
+    background: rgba(44, 36, 32, 0.55);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -882,6 +899,12 @@ body.preview-mode #printPreviewBtn {
     max-width: 500px;
     max-height: 80vh;
     overflow-y: auto;
+    animation: modal-in 0.16s ease-out;
+}
+
+@keyframes modal-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 
 .modal-header {
@@ -903,6 +926,11 @@ body.preview-mode #printPreviewBtn {
     font-size: 1.5rem;
     cursor: pointer;
     color: var(--color-text-muted);
+    transition: color 0.15s;
+}
+
+.close-btn:hover {
+    color: var(--color-accent);
 }
 
 .modal-body {
@@ -921,6 +949,7 @@ body.preview-mode #printPreviewBtn {
 .setting-item input[type="checkbox"] {
     width: 18px;
     height: 18px;
+    accent-color: var(--color-accent);
 }
 
 .setting-hint {
@@ -928,6 +957,49 @@ body.preview-mode #printPreviewBtn {
     margin-top: 4px;
     font-size: 0.85em;
     opacity: 0.75;
+}
+
+/* menu.json destination folder row */
+.setting-folder {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    cursor: default;
+}
+
+.folder-picker-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.folder-picker-row input[type="text"] {
+    flex: 1;
+    padding: 8px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    font-size: 13px;
+    color: var(--color-text-muted);
+    background: var(--color-bg);
+    min-width: 0;
+}
+
+.setting-email-status {
+    cursor: default;
+    padding: 4px 0 8px 0;
+}
+
+.setting-status {
+    font-size: 0.85em;
+    line-height: 1.4;
+}
+
+.setting-status.ok {
+    color: #1e7e34;
+}
+
+.setting-status.warn {
+    color: #b3541e;
 }
 
 /* Verse Selector */
@@ -994,21 +1066,173 @@ body.preview-mode #printPreviewBtn {
     width: 100%;
 }
 
-/* Export */
-#exportText {
-    width: 100%;
-    min-height: 200px;
-    font-family: monospace;
-    font-size: 0.85rem;
-    padding: 10px;
-    border: 1px solid var(--color-border);
-    border-radius: 4px;
-    resize: vertical;
-    margin: 10px 0;
+/* ========================================
+   PUBLISH MONTH MODAL
+   ======================================== */
+.modal-content.publish-modal {
+    max-width: 620px;
 }
 
-#copyExportBtn {
-    width: 100%;
+.publish-headline {
+    font-family: var(--font-serif);
+    font-size: 1.35rem;
+    color: var(--color-text);
+    margin-bottom: 4px;
+}
+
+.publish-subline {
+    color: var(--color-text-muted);
+    margin-bottom: 14px;
+    font-size: 0.92rem;
+}
+
+.publish-checklist {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 14px 0;
+}
+
+.checklist-item {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 10px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    margin-bottom: 8px;
+    background: var(--color-bg);
+}
+
+.check-ok {
+    color: #1e7e34;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.check-warn {
+    color: #b3541e;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.check-fail {
+    color: #dc3545;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.checklist-text {
+    font-size: 0.92rem;
+    line-height: 1.45;
+}
+
+.checklist-detail {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    margin-top: 2px;
+    word-break: break-word;
+}
+
+.publish-warnings {
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 6px;
+    padding: 10px 14px;
+    margin-bottom: 14px;
+}
+
+.publish-warnings h4 {
+    font-size: 0.9rem;
+    margin-bottom: 4px;
+}
+
+.publish-warnings p {
+    font-size: 0.87rem;
+    line-height: 1.45;
+    color: #664d03;
+}
+
+.publish-folder-status {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    margin: 0 0 12px 0;
+}
+
+.publish-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 4px;
+}
+
+.publish-hint {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    margin-top: 10px;
+}
+
+.publish-verdict {
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-bottom: 14px;
+    font-weight: 600;
+}
+
+.publish-verdict.ok {
+    background: #d4edda;
+    border: 1px solid #28a745;
+    color: #155724;
+}
+
+.publish-verdict.fail {
+    background: #f8d7da;
+    border: 1px solid #dc3545;
+    color: #721c24;
+}
+
+/* Published badge next to the month selector */
+.published-badge {
+    background: #28a745;
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 10px;
+    letter-spacing: 0.3px;
+}
+
+/* Publish Month header button - brand burgundy, clearly the primary action */
+.btn-publish {
+    background: var(--pdf-burgundy);
+    color: #fff;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
+}
+
+.btn-publish:hover {
+    background: var(--color-accent-dark);
+    box-shadow: 0 3px 10px rgba(139, 26, 26, 0.35);
+    transform: translateY(-1px);
+}
+
+.btn-publish:disabled {
+    background: #b8a8a0;
+    cursor: not-allowed;
+}
+
+/* Panel helper text (e.g. Specials meaning) */
+.panel-helper {
+    font-size: 0.72rem;
+    color: var(--color-text-muted);
+    text-align: center;
+    opacity: 0.85;
+}
+
+/* Print note: shown on the PDF to explain Specials */
+.print-note {
+    display: none;
 }
 
 /* ========================================
@@ -1030,6 +1254,17 @@ body.preview-mode .print-header {
     margin-bottom: 6px;
     padding-bottom: 8px;
     border-bottom: 2px solid var(--pdf-gold);
+}
+
+/* Specials explanation - visible in preview/print output */
+body.preview-mode .print-note {
+    display: block;
+    font-family: var(--font-sans);
+    font-size: 8.5pt;
+    color: var(--pdf-text-muted);
+    font-style: italic;
+    text-align: center;
+    margin: 0 0 6px 0;
 }
 
 /* Refined page border - subtle double-line frame in preview mode */
@@ -1181,7 +1416,7 @@ body.preview-mode .calendar-grid {
     border: 1px solid var(--pdf-border);
     border-radius: 4px;
     overflow: visible;
-    grid-template-columns: 0.5fr 1.9fr 1.9fr 1.9fr 1.9fr 1.9fr 0.5fr;
+    grid-template-columns: 0.4fr 1.9fr 1.9fr 1.9fr 1.9fr 1.9fr 0.4fr;
 }
 
 body.preview-mode .day-header {
@@ -1332,5 +1567,27 @@ body.preview-mode .day-entree-placeholder {
     to {
         transform: translateX(100%);
         opacity: 0;
+    }
+}
+
+/* ========================================
+   QUALITY FLOOR - FOCUS, MOTION, SELECTION
+   ======================================== */
+:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+}
+
+::selection {
+    background: rgba(196, 167, 125, 0.4);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
     }
 }

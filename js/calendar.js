@@ -8,7 +8,7 @@ const Calendar = {
         'July', 'August', 'September', 'October', 'November', 'December'
     ],
 
-    dayNames: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+    dayNames: ['S', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'S'],
 
     init() {
         this.setupNavigation();
@@ -47,6 +47,10 @@ const Calendar = {
         this.updateMonthLabel();
         this.renderCalendar();
         this.renderVerse();
+        // Keep the "Published" indicator in sync with month navigation.
+        if (typeof Publish !== 'undefined' && Publish.updateBadge) {
+            Publish.updateBadge();
+        }
     },
 
     updateMonthLabel() {
@@ -185,7 +189,7 @@ const Calendar = {
                 cell.classList.add('missing-entree');
                 const placeholder = document.createElement('div');
                 placeholder.className = 'day-entree-placeholder';
-                placeholder.textContent = 'No entree set';
+                placeholder.textContent = 'No entrée set';
                 content.appendChild(placeholder);
             }
 
@@ -240,7 +244,7 @@ const Calendar = {
         editInput.type = 'text';
         editInput.className = 'day-edit-input';
         editInput.value = this.formatDayEditValue(dayData);
-        editInput.placeholder = 'Drag tile or type: Entree | Side1, Side2 | Special | Event';
+        editInput.placeholder = 'Drag tile or type: Entrée | Side1, Side2 | Special | Event';
         cell.appendChild(editInput);
 
         return cell;

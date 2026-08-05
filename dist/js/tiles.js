@@ -90,9 +90,11 @@ const Tiles = {
         // Add global mouse move and mouse up listeners
         this.boundMouseMove = this.handleMouseMove.bind(this);
         this.boundMouseUp = this.handleMouseUp.bind(this);
-        
+
         document.addEventListener('mousemove', this.boundMouseMove);
         document.addEventListener('mouseup', this.boundMouseUp);
+        // Also listen on window for drags that leave the document
+        window.addEventListener('mouseup', this.boundMouseUp);
 
         e.target.classList.add('dragging');
     },
@@ -168,6 +170,7 @@ const Tiles = {
 
         document.removeEventListener('mousemove', this.boundMouseMove);
         document.removeEventListener('mouseup', this.boundMouseUp);
+        window.removeEventListener('mouseup', this.boundMouseUp);
     },
 
     updateGridDensity() {

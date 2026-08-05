@@ -9,8 +9,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;600;700&family=Dancing+Script:wght@400;700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/app.css?v=2">
-    <link rel="stylesheet" href="css/pdf.css?v=2" media="print">
+    <link rel="stylesheet" href="css/app.css?v=6">
+    <link rel="stylesheet" href="css/pdf.css?v=3" media="print">
 </head>
 <body>
     <div id="app">
@@ -22,13 +22,12 @@
                     <button id="prevMonth" aria-label="Previous month">&lt;</button>
                     <span id="currentMonthLabel">September 2025</span>
                     <button id="nextMonth" aria-label="Next month">&gt;</button>
+                    <span id="publishedBadge" class="published-badge" style="display: none;">✓ Published</span>
                 </div>
             </div>
             <div class="header-right">
-                <button id="previewBtn" class="btn btn-primary" aria-label="Open preview">Preview</button>
-                <button id="emailPdfBtn" class="btn btn-secondary no-print" aria-label="Email PDF">Email PDF</button>
-                <button id="exportBtn" class="btn btn-secondary" aria-label="Export text">Text Export</button>
-                <button id="emailTxtBtn" class="btn btn-secondary no-print" aria-label="Email TXT">Email TXT</button>
+                <button id="previewBtn" class="btn btn-secondary no-print" aria-label="Open print preview">Preview</button>
+                <button id="publishBtn" class="btn btn-publish" aria-label="Publish this month">Publish Month</button>
                 <button id="settingsBtn" class="btn btn-icon" title="Settings" aria-label="Open settings">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="3"></circle>
@@ -44,8 +43,8 @@
             <aside class="panel panel-left no-print" id="entreePanel">
                 <div class="panel-header">
                     <div class="panel-header-actions">
-                        <button class="add-btn" data-type="entree" title="Add new entrée"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="8" y1="3" x2="8" y2="13"/><line x1="3" y1="8" x2="13" y2="8"/></svg></button>
-                        <button class="collapse-btn" data-panel="entree"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6,3 11,8 6,13"/></svg></button>
+                        <button class="add-btn" data-type="entree" title="Add new entrée" aria-label="Add new entrée"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="8" y1="3" x2="8" y2="13"/><line x1="3" y1="8" x2="13" y2="8"/></svg></button>
+                        <button class="collapse-btn" data-panel="entree" aria-label="Collapse or expand Entrées panel"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6,3 11,8 6,13"/></svg></button>
                     </div>
                     <h2>Entrées</h2>
                 </div>
@@ -60,10 +59,11 @@
             <aside class="panel panel-left panel-specials no-print collapsed" id="specialsPanel">
                 <div class="panel-header">
                     <div class="panel-header-actions">
-                        <button class="add-btn" data-type="specials" title="Add new special"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="8" y1="3" x2="8" y2="13"/><line x1="3" y1="8" x2="13" y2="8"/></svg></button>
-                        <button class="collapse-btn" data-panel="specials"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6,3 11,8 6,13"/></svg></button>
+                        <button class="add-btn" data-type="specials" title="Add new special" aria-label="Add new special"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="8" y1="3" x2="8" y2="13"/><line x1="3" y1="8" x2="13" y2="8"/></svg></button>
+                        <button class="collapse-btn" data-panel="specials" aria-label="Collapse or expand Specials panel"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6,3 11,8 6,13"/></svg></button>
                     </div>
                     <h2>Specials</h2>
+                    <p class="panel-helper">For teachers &amp; 12th-grade students</p>
                 </div>
                 <div class="panel-content">
                     <div class="tile-grid" id="specialsGrid" data-columns="2">
@@ -83,6 +83,7 @@
             <section class="calendar-container" id="calendarContainer">
                 <div class="calendar-header">
                     <h1 class="month-title" id="monthTitle">September 2025</h1>
+                    <p class="print-note">Specials are for teachers &amp; 12th-grade students.</p>
                     <div class="verse-display" id="verseDisplay">
                         <p class="verse-text" id="verseText"></p>
                         <p class="verse-ref" id="verseRef"></p>
@@ -98,8 +99,8 @@
             <aside class="panel panel-right no-print" id="sidePanel">
                 <div class="panel-header">
                     <div class="panel-header-actions">
-                        <button class="add-btn" data-type="side" title="Add new side"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="8" y1="3" x2="8" y2="13"/><line x1="3" y1="8" x2="13" y2="8"/></svg></button>
-                        <button class="collapse-btn" data-panel="side"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6,3 11,8 6,13"/></svg></button>
+                        <button class="add-btn" data-type="side" title="Add new side" aria-label="Add new side"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="8" y1="3" x2="8" y2="13"/><line x1="3" y1="8" x2="13" y2="8"/></svg></button>
+                        <button class="collapse-btn" data-panel="side" aria-label="Collapse or expand Sides panel"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6,3 11,8 6,13"/></svg></button>
                     </div>
                     <h2>Sides</h2>
                 </div>
@@ -114,8 +115,8 @@
             <aside class="panel panel-special no-print collapsed" id="specialPanel">
                 <div class="panel-header">
                     <div class="panel-header-actions">
-                        <button class="add-btn" data-type="specialEvent" title="Add new special event"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="8" y1="3" x2="8" y2="13"/><line x1="3" y1="8" x2="13" y2="8"/></svg></button>
-                        <button class="collapse-btn" data-panel="special"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6,3 11,8 6,13"/></svg></button>
+                        <button class="add-btn" data-type="specialEvent" title="Add new special event" aria-label="Add new special event"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="8" y1="3" x2="8" y2="13"/><line x1="3" y1="8" x2="13" y2="8"/></svg></button>
+                        <button class="collapse-btn" data-panel="special" aria-label="Collapse or expand Special Events panel"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6,3 11,8 6,13"/></svg></button>
                     </div>
                     <h2>Special Events</h2>
                 </div>
@@ -150,12 +151,11 @@
                         <span>Enable advanced verse lookup (Book → Chapter → Verse)</span>
                     </label>
                     <div class="setting-item">
-                        <label for="pdfEmailInput">PDF Email Recipient:</label>
-                        <input type="email" id="pdfEmailInput" placeholder="email@example.com">
+                        <label for="staffEmailInput">Staff-Office Email Recipient:</label>
+                        <input type="email" id="staffEmailInput" placeholder="office@example.com">
                     </div>
-                    <div class="setting-item">
-                        <label for="txtEmailInput">TXT Email Recipient:</label>
-                        <input type="email" id="txtEmailInput" placeholder="email@example.com">
+                    <div class="setting-item setting-email-status">
+                        <span id="emailStatus" class="setting-status"></span>
                     </div>
                     <hr>
                     <div class="setting-item">
@@ -177,7 +177,18 @@
                     </div>
                     <div class="setting-item">
                         <button id="testConnectionBtn" class="btn btn-secondary">Test Connection</button>
+                        <button id="sendTestEmailBtn" class="btn btn-secondary">Send Test Email</button>
                     </div>
+                    <hr>
+                    <div class="setting-item setting-folder">
+                        <label for="menuJsonFolderInput">menu.json Destination Folder:</label>
+                        <div class="folder-picker-row">
+                            <input type="text" id="menuJsonFolderInput" placeholder="No folder selected" readonly>
+                            <button id="chooseFolderBtn" class="btn btn-secondary">Choose Folder…</button>
+                        </div>
+                        <span id="menuJsonFolderStatus" class="setting-status"></span>
+                    </div>
+                    <small class="setting-hint">menu.json is written here on every Publish. Use a Google Drive-synced folder so other local projects can read it.</small>
                     <hr>
                     <div class="setting-item">
                         <button id="exportDataBtn" class="btn btn-secondary">Export All Data</button>
@@ -216,19 +227,17 @@
             </div>
         </div>
 
-        <!-- Text Export Modal -->
-        <div id="exportModal" class="modal no-print" role="dialog" aria-modal="true" aria-labelledby="exportModalTitle" style="display: none;">
-            <div class="modal-content">
+        <!-- Publish Month Modal -->
+        <div id="publishModal" class="modal no-print" role="dialog" aria-modal="true" aria-labelledby="publishModalTitle" style="display: none;">
+            <div class="modal-content publish-modal">
                 <div class="modal-header">
-                    <h2 id="exportModalTitle">Text Export</h2>
-                    <button class="close-btn" id="closeExport" aria-label="Close export modal">
+                    <h2 id="publishModalTitle">Publish Month</h2>
+                    <button class="close-btn" id="closePublish" aria-label="Close publish dialog">
                         &times;
                     </button>
                 </div>
-                <div class="modal-body">
-                    <p>Copy this text and paste into your SIS:</p>
-                    <textarea id="exportText" readonly></textarea>
-                    <button id="copyExportBtn" class="btn btn-primary">Copy to Clipboard</button>
+                <div class="modal-body" id="publishModalBody">
+                    <!-- Rendered by js/publish.js -->
                 </div>
             </div>
         </div>
@@ -239,14 +248,14 @@
     <script src="js/vendor/jspdf.umd.min.js" defer></script>
     <script src="js/vendor/html2canvas.min.js" defer></script>
     <script src="js/state.js" defer></script>
+    <script src="js/menu-data.js" defer></script>
     <script src="js/tiles.js" defer></script>
     <script src="js/calendar.js" defer></script>
     <script src="js/editing.js" defer></script>
     <script src="js/verses.js" defer></script>
-    <script src="js/settings.js?v=2" defer></script>
-    <script src="js/text-export.js" defer></script>
-    <script src="js/email-export.js" defer></script>
+    <script src="js/settings.js" defer></script>
     <script src="js/pdf-export.js" defer></script>
-    <script src="js/app.js?v=2" defer></script>
+    <script src="js/publish.js" defer></script>
+    <script src="js/app.js" defer></script>
 </body>
 </html>

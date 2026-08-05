@@ -56,7 +56,9 @@ After installation, they will have:
 - A Start Menu entry
 - The app opens in its own window (no browser needed)
 - All data saves automatically to their computer
-- Print to PDF works exactly like in the browser
+- A single **Publish Month** button that produces the PDF, SIS TXT file,
+  `menu.json`, and the staff-office email (see USER_README.md)
+- Automatic PDF generation (jsPDF + html2canvas) plus Preview → Print
 
 ## Distribution
 

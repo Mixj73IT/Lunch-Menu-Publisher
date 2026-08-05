@@ -10,12 +10,16 @@ const StorageKeys = {
     MENUS: 'lunchMenu_menus',
     SETTINGS: 'lunchMenu_settings',
     CURRENT_MONTH: 'lunchMenu_currentMonth',
-    PDF_EMAIL: 'lunchMenu_pdfEmail',
-    TXT_EMAIL: 'lunchMenu_txtEmail',
+    STAFF_EMAIL: 'lunchMenu_staffEmail',
     SMTP_HOST: 'lunchMenu_smtpHost',
     SMTP_PORT: 'lunchMenu_smtpPort',
     SMTP_USER: 'lunchMenu_smtpUser',
-    SMTP_PASSWORD: 'lunchMenu_smtpPassword'
+    SMTP_PASSWORD: 'lunchMenu_smtpPassword',
+    MENU_JSON_FOLDER: 'lunchMenu_menuJsonFolder',
+    LAST_PUBLISHED: 'lunchMenu_lastPublished',
+    // Legacy keys, kept only for one-time migration to STAFF_EMAIL.
+    PDF_EMAIL: 'lunchMenu_pdfEmail',
+    TXT_EMAIL: 'lunchMenu_txtEmail'
 };
 
 const TileTypes = Object.freeze({
@@ -36,10 +40,6 @@ const MONTH_NAMES = Object.freeze([
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
 ]);
-
-function getMonthName(month) {
-    return MONTH_NAMES[month];
-}
 
 const DEFAULT_ENTREES = [
     { id: 'entree-1', name: 'Chicken Nuggets', type: TileTypes.ENTREE },
@@ -94,12 +94,13 @@ const State = {
     settings: {},
     currentMonth: new Date().getMonth(),
     currentYear: new Date().getFullYear(),
-    pdfEmail: '',
-    txtEmail: '',
+    staffEmail: '',
     smtpHost: '',
     smtpPort: 587,
     smtpUser: '',
     smtpPassword: '',
+    menuJsonFolder: '',
+    lastPublished: {},
     undoStack: [],
     undoMaxSize: 20,
 
@@ -118,13 +119,26 @@ const State = {
         this.specialEventTiles = this.load(StorageKeys.SPECIAL_EVENT_TILES) || [];
         this.menus = this.load(StorageKeys.MENUS) || {};
         this.settings = this.load(StorageKeys.SETTINGS) || {};
-        this.pdfEmail = this.load(StorageKeys.PDF_EMAIL) || '';
-        this.txtEmail = this.load(StorageKeys.TXT_EMAIL) || '';
         this.smtpHost = this.load(StorageKeys.SMTP_HOST) || '';
         const savedPort = this.load(StorageKeys.SMTP_PORT);
         this.smtpPort = (typeof savedPort === 'number' && savedPort > 0) ? savedPort : 587;
         this.smtpUser = this.load(StorageKeys.SMTP_USER) || '';
         this.smtpPassword = this.load(StorageKeys.SMTP_PASSWORD) || '';
+        this.menuJsonFolder = this.load(StorageKeys.MENU_JSON_FOLDER) || '';
+        this.lastPublished = this.load(StorageKeys.LAST_PUBLISHED) || {};
+
+        // Migration: the old app had separate PDF/TXT recipients. Consolidate
+        // them into the single staff-office recipient (TXT took precedence).
+        const staffEmail = this.load(StorageKeys.STAFF_EMAIL) || '';
+        const legacyPdfEmail = this.load(StorageKeys.PDF_EMAIL) || '';
+        const legacyTxtEmail = this.load(StorageKeys.TXT_EMAIL) || '';
+        this.staffEmail = staffEmail || legacyTxtEmail || legacyPdfEmail;
+        if (!staffEmail && this.staffEmail) {
+            const prev = '';
+            this.save(StorageKeys.STAFF_EMAIL, this.staffEmail);
+            this.save(StorageKeys.PDF_EMAIL, prev);
+            this.save(StorageKeys.TXT_EMAIL, prev);
+        }
 
         const savedDate = this.load(StorageKeys.CURRENT_MONTH);
         if (savedDate) {
@@ -295,6 +309,33 @@ const State = {
         }, 1500);
     },
 
+    /* ---- Staff-office email (single recipient) ---- */
+    saveStaffEmail(prev) {
+        if (!this.save(StorageKeys.STAFF_EMAIL, this.staffEmail) && prev !== undefined) {
+            this.staffEmail = prev;
+        }
+    },
+
+    /* ---- menu.json destination folder ---- */
+    saveMenuJsonFolder(prev) {
+        if (!this.save(StorageKeys.MENU_JSON_FOLDER, this.menuJsonFolder) && prev !== undefined) {
+            this.menuJsonFolder = prev;
+        }
+    },
+
+    /* ---- Last published snapshots ---- */
+    markPublished(month, year, publishedAt) {
+        const prev = { ...this.lastPublished };
+        this.lastPublished[this.getMenuKey(month, year)] = publishedAt || new Date().toISOString();
+        if (!this.save(StorageKeys.LAST_PUBLISHED, this.lastPublished) && prev !== undefined) {
+            this.lastPublished = prev;
+        }
+    },
+
+    getLastPublished(month, year) {
+        return this.lastPublished[this.getMenuKey(month, year)] || null;
+    },
+
     /* ---- SMTP settings ---- */
     saveSmtpHost(prev) {
         if (!this.save(StorageKeys.SMTP_HOST, this.smtpHost) && prev !== undefined) {
@@ -371,8 +412,8 @@ const State = {
             specialEventTiles: this.specialEventTiles,
             menus: this.menus,
             settings: this.settings,
-            pdfEmail: this.pdfEmail,
-            txtEmail: this.txtEmail,
+            staffEmail: this.staffEmail,
+            menuJsonFolder: this.menuJsonFolder,
             smtpHost: this.smtpHost,
             smtpPort: this.smtpPort,
             smtpUser: this.smtpUser
@@ -443,15 +484,19 @@ const State = {
                     this.settings = data.settings;
                     this.saveSettings(prev);
                 }
-                if (data.pdfEmail !== undefined) {
-                    const prev = this.pdfEmail;
-                    this.pdfEmail = data.pdfEmail;
-                    this.savePdfEmail(prev);
+                // Backward compatible: old backups used pdfEmail/txtEmail.
+                const importedStaffEmail = data.staffEmail !== undefined
+                    ? data.staffEmail
+                    : (data.txtEmail || data.pdfEmail || '');
+                if (importedStaffEmail !== undefined) {
+                    const prev = this.staffEmail;
+                    this.staffEmail = importedStaffEmail;
+                    this.saveStaffEmail(prev);
                 }
-                if (data.txtEmail !== undefined) {
-                    const prev = this.txtEmail;
-                    this.txtEmail = data.txtEmail;
-                    this.saveTxtEmail(prev);
+                if (data.menuJsonFolder !== undefined) {
+                    const prev = this.menuJsonFolder;
+                    this.menuJsonFolder = data.menuJsonFolder;
+                    this.saveMenuJsonFolder(prev);
                 }
                 if (typeof data.smtpHost === 'string') {
                     const prev = this.smtpHost;
@@ -512,18 +557,6 @@ const State = {
         if (!this.save(StorageKeys.CURRENT_MONTH, { month: this.currentMonth, year: this.currentYear }) && prev !== undefined) {
             this.currentMonth = prev.month;
             this.currentYear = prev.year;
-        }
-    },
-
-    savePdfEmail(prev) {
-        if (!this.save(StorageKeys.PDF_EMAIL, this.pdfEmail) && prev !== undefined) {
-            this.pdfEmail = prev;
-        }
-    },
-
-    saveTxtEmail(prev) {
-        if (!this.save(StorageKeys.TXT_EMAIL, this.txtEmail) && prev !== undefined) {
-            this.txtEmail = prev;
         }
     },
 

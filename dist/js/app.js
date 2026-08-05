@@ -5,21 +5,35 @@
 const App = {
     async init() {
         State.init();
+
+        // Populate the print header's school name (settings.schoolName, if set)
+        const schoolNameEl = document.getElementById('printSchoolName');
+        if (schoolNameEl && State.settings && State.settings.schoolName) {
+            schoolNameEl.textContent = State.settings.schoolName;
+        }
+
         Tiles.init();
         Calendar.init();
         Editing.init();
         await VerseSelector.init();
         Settings.init();
         PanelCollapse.init();
-        TextExport.init();
 
-        // EmailExport may not be available in browser (Tauri-only module)
+        // Initialize PDF generation + the Publish Month workflow
         try {
-            if (typeof EmailExport !== 'undefined') {
-                EmailExport.init();
+            if (typeof PdfExport !== 'undefined') {
+                PdfExport.init();
             }
         } catch (e) {
-            // EmailExport not available in browser (Tauri-only)
+            // PdfExport not available in browser
+        }
+
+        try {
+            if (typeof Publish !== 'undefined') {
+                Publish.init();
+            }
+        } catch (e) {
+            // Publish not available
         }
 
         // Bible data is lazy-loaded only when the Advanced verse lookup tab is opened

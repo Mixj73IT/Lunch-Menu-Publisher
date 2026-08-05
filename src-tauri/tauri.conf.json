@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Lunch Menu Publisher",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "identifier": "com.school.lunchmenu",
   "build": {
     "beforeBuildCommand": "powershell -Command \"if (!(Test-Path dist)) { New-Item -ItemType Directory -Path dist }; Copy-Item -Path index.html,css,js,data -Destination dist -Recurse -Force\"",
@@ -10,6 +10,7 @@
     "frontendDist": "../dist"
   },
   "app": {
+    "withGlobalTauri": true,
     "windows": [
       {
         "fullscreen": false,

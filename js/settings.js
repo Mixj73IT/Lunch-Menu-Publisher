@@ -6,25 +6,15 @@ const Settings = {
     init() {
         this.setupEventListeners();
         this.applySettings();
+        this.updateStatuses();
     },
 
     setupEventListeners() {
         const $ = (id) => document.getElementById(id);
-        
-        // Debug: log any missing DOM elements
-        const expectedIds = [
-            'settingsBtn', 'closeSettings', 'compactGridToggle', 'versesToggle',
-            'advancedVerseToggle', 'pdfEmailInput', 'txtEmailInput',
-            'exportDataBtn', 'importDataBtn', 'importDataFile'
-        ];
-        const missing = expectedIds.filter(id => !$(id));
-        if (missing.length > 0) {
-            // Some expected DOM elements are missing — gracefully skip their listeners
-        }
-        
+
         const settingsBtn = $('settingsBtn');
         if (settingsBtn) settingsBtn.addEventListener('click', () => this.open());
-        
+
         const closeBtn = $('closeSettings');
         if (closeBtn) closeBtn.addEventListener('click', () => this.close());
 
@@ -60,19 +50,38 @@ const Settings = {
             }
         });
 
-        const pdfInput = $('pdfEmailInput');
-        if (pdfInput) pdfInput.addEventListener('change', (e) => {
-            const prev = State.pdfEmail;
-            State.pdfEmail = e.target.value;
-            State.savePdfEmail(prev);
+        // Single staff-office email recipient.
+        const staffInput = $('staffEmailInput');
+        if (staffInput) staffInput.addEventListener('change', (e) => {
+            const prev = State.staffEmail;
+            State.staffEmail = e.target.value.trim();
+            State.saveStaffEmail(prev);
+            State.showSaved();
+            this.updateStatuses();
         });
 
-        const txtInput = $('txtEmailInput');
-        if (txtInput) txtInput.addEventListener('change', (e) => {
-            const prev = State.txtEmail;
-            State.txtEmail = e.target.value;
-            State.saveTxtEmail(prev);
-        });
+        // menu.json destination folder (native picker in the desktop app).
+        const chooseFolderBtn = $('chooseFolderBtn');
+        if (chooseFolderBtn) {
+            chooseFolderBtn.addEventListener('click', async () => {
+                if (!(window.__TAURI__ && window.__TAURI__.invoke)) {
+                    State.showError('Choosing a folder requires the desktop app.');
+                    return;
+                }
+                try {
+                    const folder = await window.__TAURI__.invoke('pick_folder');
+                    if (folder) {
+                        const prev = State.menuJsonFolder;
+                        State.menuJsonFolder = folder;
+                        State.saveMenuJsonFolder(prev);
+                        this.updateStatuses();
+                        State.showSaved();
+                    }
+                } catch (err) {
+                    State.showError(`Could not open the folder picker: ${err}`);
+                }
+            });
+        }
 
         const smtpHost = $('smtpHostInput');
         if (smtpHost) smtpHost.addEventListener('change', (e) => {
@@ -80,6 +89,7 @@ const Settings = {
             State.smtpHost = e.target.value;
             State.saveSmtpHost(prev);
             State.showSaved();
+            this.updateStatuses();
         });
 
         const smtpPort = $('smtpPortInput');
@@ -97,6 +107,7 @@ const Settings = {
             State.smtpUser = e.target.value;
             State.saveSmtpUser(prev);
             State.showSaved();
+            this.updateStatuses();
         });
 
         const smtpPassword = $('smtpPasswordInput');
@@ -105,6 +116,7 @@ const Settings = {
             State.smtpPassword = e.target.value;
             State.saveSmtpPassword(prev);
             State.showSaved();
+            this.updateStatuses();
         });
 
         const testConnectionBtn = $('testConnectionBtn');
@@ -119,7 +131,20 @@ const Settings = {
             await State.testSmtpConnection(host, port, user, password);
         });
 
-        // Export/Import data (optional elements)
+        const sendTestEmailBtn = $('sendTestEmailBtn');
+        if (sendTestEmailBtn) {
+            sendTestEmailBtn.addEventListener('click', async () => {
+                // Persist unsaved input values before sending.
+                if (staffInput && staffInput.value !== State.staffEmail) {
+                    State.staffEmail = staffInput.value.trim();
+                    State.saveStaffEmail();
+                    this.updateStatuses();
+                }
+                await Publish.sendTestEmail();
+            });
+        }
+
+        // Export/Import data (recovery tools)
         const exportBtn = $('exportDataBtn');
         if (exportBtn) exportBtn.addEventListener('click', () => {
             State.exportData();
@@ -140,6 +165,49 @@ const Settings = {
         }
     },
 
+    /** Live status lines: email configuration + menu.json destination. */
+    updateStatuses() {
+        const emailStatus = document.getElementById('emailStatus');
+        if (emailStatus) {
+            const parts = [];
+            if (State.staffEmail) {
+                parts.push(`Recipient: ${State.staffEmail}`);
+            } else {
+                parts.push('No staff-office recipient set');
+            }
+            if (State.smtpHost && State.smtpUser && State.smtpPassword) {
+                parts.push('SMTP configured');
+                emailStatus.className = 'setting-status ok';
+                emailStatus.textContent = `✓ ${parts.join(' · ')}`;
+            } else {
+                const missing = [];
+                if (!State.smtpHost) missing.push('host');
+                if (!State.smtpUser) missing.push('user');
+                if (!State.smtpPassword) missing.push('password');
+                parts.push(`SMTP incomplete (missing ${missing.join(', ')})`);
+                emailStatus.className = 'setting-status warn';
+                emailStatus.textContent = `! ${parts.join(' · ')}`;
+            }
+        }
+
+        const folderStatus = document.getElementById('menuJsonFolderStatus');
+        if (folderStatus) {
+            const input = document.getElementById('menuJsonFolderInput');
+            if (input) input.value = State.menuJsonFolder;
+            if (State.menuJsonFolder) {
+                folderStatus.className = 'setting-status ok';
+                folderStatus.textContent = window.__TAURI__ && window.__TAURI__.invoke
+                    ? `✓ menu.json will be written to ${State.menuJsonFolder}`
+                    : `✓ menu.json will be downloaded (folder selected: ${State.menuJsonFolder}); the desktop app writes it there`;
+            } else {
+                folderStatus.className = 'setting-status warn';
+                folderStatus.textContent = window.__TAURI__ && window.__TAURI__.invoke
+                    ? '! No destination folder selected — Publish Month is disabled until you choose one.'
+                    : '! No destination folder selected — the desktop app writes menu.json to the folder you choose here; in the browser it is downloaded instead.';
+            }
+        }
+    },
+
     open() {
         const modal = document.getElementById('settingsModal');
         if (!modal) return;
@@ -150,10 +218,8 @@ const Settings = {
         if (versesToggle) versesToggle.checked = State.settings.versesEnabled;
         const advancedToggle = $('advancedVerseToggle');
         if (advancedToggle) advancedToggle.checked = State.settings.advancedVerseLookup;
-        const pdfInput = $('pdfEmailInput');
-        if (pdfInput) pdfInput.value = State.pdfEmail;
-        const txtInput = $('txtEmailInput');
-        if (txtInput) txtInput.value = State.txtEmail;
+        const staffInput = $('staffEmailInput');
+        if (staffInput) staffInput.value = State.staffEmail;
         const smtpHost = $('smtpHostInput');
         if (smtpHost) smtpHost.value = State.smtpHost;
         const smtpPort = $('smtpPortInput');
@@ -162,11 +228,13 @@ const Settings = {
         if (smtpUser) smtpUser.value = State.smtpUser;
         const smtpPassword = $('smtpPasswordInput');
         if (smtpPassword) smtpPassword.value = State.smtpPassword;
-        
+
+        this.updateStatuses();
+
         // Focus trap setup
         this.previouslyFocused = document.activeElement;
         this.setupFocusTrap(modal);
-        
+
         modal.style.display = 'flex';
     },
 
@@ -174,12 +242,12 @@ const Settings = {
         const modal = document.getElementById('settingsModal');
         if (!modal) return;
         modal.style.display = 'none';
-        
+
         // Restore focus
         if (this.previouslyFocused && this.previouslyFocused.focus) {
             this.previouslyFocused.focus();
         }
-        
+
         // Clean up focus trap
         this.removeFocusTrap();
     },
@@ -188,19 +256,19 @@ const Settings = {
         // Add keydown listener to trap focus within modal
         const trapFocus = (e) => {
             if (e.key !== 'Tab') return;
-            
+
             const focusableElements = Array.from(
                 modal.querySelectorAll(
                     'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])'
                 )
             );
-            
+
             if (focusableElements.length === 0) return;
-            
+
             const firstElement = focusableElements[0];
             const lastElement = focusableElements[focusableElements.length - 1];
             const isShift = e.shiftKey;
-            
+
             if (isShift && document.activeElement === firstElement) {
                 e.preventDefault();
                 lastElement.focus();
@@ -209,9 +277,9 @@ const Settings = {
                 firstElement.focus();
             }
         };
-        
+
         modal.addEventListener('keydown', trapFocus);
-        
+
         // Store reference for cleanup
         this._focusTrapListener = trapFocus;
     },

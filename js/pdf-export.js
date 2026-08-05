@@ -1,14 +1,15 @@
 /**
  * PDF Export Module
- * Handles PDF generation for the desktop app's "Email PDF" flow.
+ * Handles real PDF generation for the Publish Month workflow.
  *
- * Requires the vendored jspdf and html2canvas UMD bundles (js/vendor/).
- * The actual emailing is handled by EmailExport; this module only renders.
+ * Requires the vendored jspdf and html2canvas UMD bundles (js/vendor/),
+ * which are copied from node_modules by `npm install` (scripts/copy-vendor.js).
+ * Saving the blob to a file and attaching it to email is handled by Publish.
  */
 
 const PdfExport = {
     init() {
-        // Tauri detection is handled by EmailExport; nothing to set up here.
+        // Nothing to set up here; generation happens on demand.
     },
 
     /**
@@ -28,15 +29,15 @@ const PdfExport = {
     },
 
     /**
-     * Render the current calendar to a PDF blob.
+     * Render the current calendar to a real PDF blob.
      *
-     * @param {Object} [options]
-     * @param {boolean} [options.download] When true, also trigger a file download.
+     * The PDF is built client-side with jsPDF + html2canvas and mirrors the
+     * landscape print design (css/pdf.css). The blob is returned; saving it to
+     * a file (or attaching it to an email) is handled by the Publish workflow.
+     *
      * @returns {Promise<Blob>}
      */
-    async generatePdf(options) {
-        const { download = false } = options || {};
-
+    async generatePdf() {
         if (!window.jspdf?.jsPDF || typeof html2canvas !== 'function') {
             throw new Error('PDF libraries are not loaded. Please reinstall the app.');
         }
@@ -91,7 +92,8 @@ const PdfExport = {
                     scale: 2,
                     useCORS: true,
                     allowTaint: true,
-                    backgroundColor: pdfCream
+                    backgroundColor: pdfCream,
+                    logging: false // html2canvas's default debug logging floods the console
                 });
             } finally {
                 element.style.height = prevHeight;
@@ -127,11 +129,6 @@ const PdfExport = {
 
             const imgX = (pageWidth - imgWidth) / 2;
             pdf.addImage(imgData, 'PNG', imgX, marginTop, imgWidth, imgHeight);
-
-            if (download) {
-                const fileName = `lunch-menu-${getMonthName(State.currentMonth).toLowerCase()}-${State.currentYear}.pdf`;
-                pdf.save(fileName);
-            }
 
             return pdf.output('blob');
 

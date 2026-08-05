@@ -18,24 +18,22 @@ const App = {
         await VerseSelector.init();
         Settings.init();
         PanelCollapse.init();
-        TextExport.init();
 
-        // EmailExport may not be available in browser (Tauri-only module)
-        try {
-            if (typeof EmailExport !== 'undefined') {
-                EmailExport.init();
-            }
-        } catch (e) {
-            // EmailExport not available in browser (Tauri-only)
-        }
-
-        // Initialize PDF Export
+        // Initialize PDF generation + the Publish Month workflow
         try {
             if (typeof PdfExport !== 'undefined') {
                 PdfExport.init();
             }
         } catch (e) {
             // PdfExport not available in browser
+        }
+
+        try {
+            if (typeof Publish !== 'undefined') {
+                Publish.init();
+            }
+        } catch (e) {
+            // Publish not available
         }
 
         // Bible data is lazy-loaded only when the Advanced verse lookup tab is opened

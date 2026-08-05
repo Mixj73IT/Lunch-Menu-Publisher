@@ -5,141 +5,114 @@
 <h1 align="center">Lunch Menu Publisher</h1>
 
 <p align="center">
-  A professional desktop application for schools to create, manage, and publish monthly lunch menus.
+  A simple, dependable desktop app for creating and publishing one school lunch menu per month.
 </p>
 
 <p align="center">
-  <a href="https://github.com/yourusername/lunch-menu-publisher"><img src="https://img.shields.io/badge/version-1.0.0-blue" alt="Version"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="License"></a>
   <a href="https://tauri.app"><img src="https://img.shields.io/badge/built%20with-Tauri-FFC131?logo=tauri" alt="Tauri"></a>
 </p>
 
 ## Overview
 
-**Lunch Menu Publisher** is a cross-platform desktop application built for school cafeterias and food service managers. It streamlines the entire workflow of creating monthly lunch menus — from drag-and-drop menu assembly to warm, print-ready PDF output and automated email delivery.
+**Lunch Menu Publisher** is a local-first Tauri desktop app for one person
+creating one school lunch menu per month. It turns a monthly menu into the
+required outputs with a single **Publish Month** action:
 
-Designed for **offline-first** operation, all data persists locally and nothing requires a cloud subscription.
+1. **PDF** — `Lunch Menu - September 2026.pdf`, saved to Downloads
+2. **SIS TXT** — `Lunch Menu - September 2026.txt` for FACTS / RenWeb import, saved to Downloads
+3. **menu.json** — a stable machine-readable snapshot written to a configured
+   Google Drive-synced folder (atomic replace, no history)
+4. **Staff-office email** — TXT always attached, PDF attached when generated
+
+Everything stays on the user's machine. No accounts, no cloud API, no
+collaboration, no archive system.
 
 ---
 
 ## Features
 
-### Menu Creation
-- **Monthly Calendar View** — Visual, landscape-oriented calendar grid optimized for printing
-- **Drag-and-Drop Tiles** — Organize entrées, sides, specials, and special events into reusable panels
-- **Inline Editing** — Add new menu items directly in panels without disruptive popups
-- **NO SCHOOL Management** — Toggle any weekday as a non-school day with a single click; visual pattern distinguishes weekends from weekdays
+### Menu creation
+- **Monthly calendar view** — the landscape print design, preserved
+- **Drag-and-drop tiles** — reusable entrée, side, specials, and event tiles
+- **Inline editing** — click a day and type `Entree | Sides | Special | Event`
+- **NO SCHOOL days** — one-click toggle; weekends are always non-school
+- **Milk** — displayed automatically on every school day (fixed staple)
+- **Specials** — labeled "Specials", with helper text explaining they are for
+  **teachers & 12th-grade students** (in the panel, the preview, and the PDF)
+- **Missing-entrée safeguard** — instructional days without an entrée pulse
+  orange
 
-### Content & Design
-- **Bible Verse Integration** — Display a curated or custom KJV verse on the monthly menu
-- **Warm PDF Palette** — Burgundy, gold, and cream print design with school logo header
-- **Daily Milk Display** — Milk appears automatically as a staple on every school day
-- **Special Event Highlighting** — Gold left border draws attention to events like bake sales or grandparents' day
+### Publish Month (one button)
+- **Confirmation checklist** — month/year, missing-entrée count, and exactly
+  what will be produced (PDF, TXT, `menu.json`, email)
+- **Honest results** — every output reports its own success/failure; publishing
+  is only "complete" when `menu.json` was written
+- **Cancel-safe** — nothing happens until you confirm
+- **✓ Published badge** on the month once published
 
-### Export & Delivery
-- **Print-Ready PDF** — Single-page, landscape PDF output via CSS print media
-- **Text Export** — Plain-text export for any school information system
-- **Email Integration** — Desktop app can email TXT exports directly via SMTP (Tauri backend)
-- **Data Backup & Restore** — Full JSON export/import of all menus, tiles, and settings
+### Integration
+- **menu.json schema v1** — documented in [MENU_JSON.md](MENU_JSON.md);
+  written atomically (temp file + rename) so downstream projects never read
+  partial JSON; each publish replaces the previous file
+- **PDF** — generated client-side with jsPDF + html2canvas, mirroring the
+  print design; falls back to an honest **Preview → Print → Save as PDF** step
+- **Email** — SMTP (implicit TLS on 465, STARTTLS otherwise) with a single
+  staff-office recipient; test connection + test email in Settings
 
 ### Usability
-- **Undo System** — Press `Ctrl+Z` to undo calendar edits and tile changes
-- **Autosave** — All changes persist automatically to localStorage
-- **Collapsible Side Panels** — Maximize calendar space on smaller screens
-- **Missing Entrée Safeguard** — Orange pulse animation highlights school days without an entrée
+- **Undo** (`Ctrl+Z`), **autosave** to localStorage, collapsible panels
+- **Settings** simplified around the workflow: staff email, menu.json folder
+  picker, email status, verse options, compact grid, backup/restore
 
 ---
 
-## Installation
+## Quick Start (desktop app)
 
-### Desktop Application (Recommended)
-
-The desktop app is built with **Tauri** and runs natively on Windows, macOS, and Linux.
-
-**Requirements:**
-- [Node.js](https://nodejs.org/) (LTS)
-- [Rust](https://rustup.rs/) (stable)
-
-**Build from source:**
-
-```bash
-# Clone the repository
-git clone https://github.com/yourusername/lunch-menu-publisher.git
-cd lunch-menu-publisher
-
-# Install frontend dependencies
-npm install
-
-# Run in development mode
-npm run tauri dev
-
-# Build production installer
-npm run tauri build
-```
-
-The Windows installer (`.msi`) will be located at:
-
-```
-src-tauri/target/release/bundle/msi/Lunch Menu Publisher_1.0.0_x64_en-US.msi
-```
-
-### Web Version
-
-For quick browser access without installing:
-
-```bash
-# Serve the static files
-npx serve dist
-
-# Or with Python
-python -m http.server 8080
-```
-
-Then open `http://localhost:8080` in your browser.
-
-> **Note:** The web version does not include SMTP email delivery (requires the Tauri backend). Email exports fall back to `mailto:` links.
-
----
-
-## Quick Start
-
-1. **Select a month** — Use the arrow buttons in the header
-2. **Build your tile library** — Click the **+** button on any panel to add entrées, sides, or specials
-3. **Populate the calendar** — Drag tiles onto day cells
-4. **Add a verse** — Click **Select Verse** and choose from curated or the full KJV Bible
-5. **Preview & print** — Click **Preview** to see the warm PDF layout, then print
-6. **Export** — Use **Text Export** or **Email TXT** to share the menu
+1. **Install** — see [README-PACKAGING.md](README-PACKAGING.md)
+2. **Set up once** — Settings: staff-office email + SMTP credentials, and
+   **Choose Folder…** for the menu.json destination (a Google Drive-synced
+   folder). See [USER_README.md](USER_README.md) §2.
+3. **Build the menu** — navigate months, drag tiles onto days, mark NO SCHOOL
+4. **Publish** — click **Publish Month**, review the checklist, confirm
+5. **Done** — PDF + TXT in Downloads, `menu.json` synced to Google Drive,
+   email sent to the office
 
 ---
 
 ## Project Structure
 
 ```
-lunch-menu-publisher/
 ├── css/
-│   ├── app.css          # Main application styles
-│   ├── pdf.css          # Print-specific / PDF styles
+│   ├── app.css          # Application + preview styles
+│   ├── pdf.css          # Print / PDF styles
 │   └── fonts.css        # Offline font-face declarations
 ├── data/
-│   ├── curated-verses.json   # Pre-selected Bible verses
-│   └── kjv-bible.json        # Full King James Bible (JSON)
+│   ├── curated-verses.json
+│   └── kjv-bible.json
 ├── js/
-│   ├── app.js           # Application initialization
+│   ├── app.js           # Initialization, preview mode, shortcuts
 │   ├── calendar.js      # Calendar rendering & interaction
 │   ├── editing.js       # Day-cell inline editing
-│   ├── email-export.js  # Email export (Tauri invoke + mailto fallback)
-│   ├── text-export.js   # Plain-text export for SIS import
-│   ├── settings.js      # Settings modal & preferences
+│   ├── menu-data.js     # PURE data layer: menu.json schema, TXT, validation
+│   ├── pdf-export.js    # Real PDF generation (jsPDF + html2canvas)
+│   ├── publish.js       # Publish Month workflow (confirmation + execution)
+│   ├── settings.js      # Settings modal & configuration
 │   ├── state.js         # State management, localStorage, rollback
 │   ├── tiles.js         # Tile rendering & drag-and-drop
-│   └── verses.js        # Verse selection & Bible data
+│   ├── verses.js        # Verse selection & Bible data
+│   └── vendor/          # jspdf + html2canvas (copied by npm install)
+├── scripts/
+│   ├── copy-vendor.js   # Copies PDF libs into js/vendor
+│   └── generate-icon.py
 ├── src-tauri/
-│   ├── src/main.rs      # Rust backend (SMTP email command)
-│   ├── Cargo.toml       # Rust dependencies
-│   └── tauri.conf.json  # Tauri window & bundle config
-├── dist/                # Static build output (mirrors root)
-├── index.html           # Main HTML entry
-└── package.json         # Node.js scripts & devDependencies
+│   ├── src/main.rs      # Rust backend: SMTP, folder picker, atomic writes
+│   ├── Cargo.toml
+│   └── tauri.conf.json
+├── tests/
+│   └── menu-data.test.js # Unit tests (Node built-in runner)
+├── index.html
+└── package.json
 ```
 
 ---
@@ -148,53 +121,34 @@ lunch-menu-publisher/
 
 | Document | Purpose |
 |----------|---------|
-| [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md) | Full technical architecture, backend integration, and build instructions |
-| [USER_README.md](USER_README.md) | End-user guide for cafeteria managers |
-| [README-PACKAGING.md](README-PACKAGING.md) | Packaging the app into a Windows installer |
-| [TEXT_EXPORT.md](TEXT_EXPORT.md) | Text export format specification |
+| [USER_README.md](USER_README.md) | End-user guide: workflow + setup steps |
+| [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md) | Architecture, backend commands, tests, build |
+| [MENU_JSON.md](MENU_JSON.md) | **menu.json schema** for external consumers |
+| [TEXT_EXPORT.md](TEXT_EXPORT.md) | Exact SIS text-export format |
 | [PDF_DESIGN_INTENT.md](PDF_DESIGN_INTENT.md) | PDF visual design rationale |
 | [SETTINGS_SPEC.md](SETTINGS_SPEC.md) | Settings modal specification |
 | [VERSE_HANDLING.md](VERSE_HANDLING.md) | Verse selection logic & Bible data handling |
 | [UX_CORE_RULES.md](UX_CORE_RULES.md) | UX design principles & constraints |
 | [NO_SCHOOL_BEHAVIOR.md](NO_SCHOOL_BEHAVIOR.md) | NO SCHOOL day visual behavior |
+| [README-PACKAGING.md](README-PACKAGING.md) | Packaging into a Windows installer |
 
 ---
 
 ## Development
 
-### Code Patterns
+```bash
+npm install        # installs frontend deps AND copies PDF libs into js/vendor
+npm run tauri dev  # run the desktop app in development
+npm test           # unit tests (menu-data, schema, TXT, validation)
+npm run tauri build
+```
 
-The JavaScript codebase follows a defensive, vanilla-JS style:
-
-- **Null-guarded DOM access** — Every `getElementById` is checked before attaching listeners
-- **Persistence rollback** — If `localStorage` fails (e.g., quota exceeded), in-memory state is reverted to the previous snapshot
-- **Shared constants** — `TileTypes` and `GridIds` frozen objects eliminate magic strings across modules
-- **Inline add input** — New tiles are added via an inline text field (no `prompt()` popups, which are unsupported in Tauri)
-
-### State Architecture
-
-All application state is stored in `localStorage` with the following keys:
-
-| Key | Description |
-|-----|-------------|
-| `lunchMenu_entreeTiles` | Ordered array of entrée tile objects |
-| `lunchMenu_sideTiles` | Ordered array of side tile objects |
-| `lunchMenu_specialsTiles` | Specials (extra-purchase) tiles |
-| `lunchMenu_specialEventTiles` | Special event tiles |
-| `lunchMenu_menus` | Monthly menu data (day → { entrée, sides, specials, specialEvent, noSchool }) |
-| `lunchMenu_settings` | Application settings object |
-| `lunchMenu_currentMonth` | Currently selected month index |
-| `lunchMenu_pdfEmail` | Default PDF email recipient |
-| `lunchMenu_txtEmail` | Default TXT email recipient |
+See [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md) for the full technical details:
+Tauri commands, the atomic-write design, the `menu.json` schema, the email
+flow, and testing.
 
 ---
 
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
-
----
-
-## Support
-
-For bug reports or feature requests, please open an issue on the project repository.

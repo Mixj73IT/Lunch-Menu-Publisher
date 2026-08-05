@@ -2,203 +2,219 @@
 
 ## 1. Introduction
 
-This document serves as a comprehensive technical guide for developers working on the **Lunch Menu Publisher**, a Tauri desktop application for creating, managing, and publishing monthly school lunch menus. The app is self-contained: all data persists locally, menus are generated entirely within the app, and email exports are sent directly to configured recipients without any external processing pipeline.
+**Lunch Menu Publisher** is a local-first Tauri v2 desktop app for creating and
+publishing one school lunch menu per month. The core idea: the user builds a
+month in the calendar, then presses **Publish Month** — one action that
+produces all required outputs (PDF, SIS TXT, `menu.json`, staff-office email).
 
-## 2. System Architecture
+The product is deliberately narrow:
 
-The application is a single Tauri desktop app with a web frontend (HTML, CSS, JavaScript) and a Rust backend for native capabilities.
+- One user, one laptop, one menu per month.
+- No accounts, no cloud API, no Google Drive API, no collaboration, no
+  archive/history system.
+- Milk is a fixed staple shown automatically on school days.
+- "Specials" keep their name and are clearly labeled as teacher/12th-grade
+  offerings.
+
+## 2. Architecture
+
+A single Tauri v2 desktop app: a vanilla-JS web frontend (no framework, no
+bundler — plain `<script>` tags) plus a Rust backend exposing a small set of
+Tauri commands. All application state lives in `localStorage`.
 
 ```mermaid
 graph TD
-    A[Lunch Menu Publisher (Tauri Desktop App)] -->|Generates Menu, PDF, Text Export| B[User]
-    A -->|Sends TXT via SMTP| C[Email Recipient]
-    A -->|Prints / Saves| D[PDF Output]
+    A[Frontend: calendar + tiles] -->|Publish Month| B[publish.js]
+    B --> C[menu-data.js - pure data layer]
+    B --> D[pdf-export.js - jsPDF + html2canvas]
+    B -->|invoke| E[Rust commands]
+    E -->|atomic write| F[menu.json in Drive-synced folder]
+    E -->|atomic write| G[PDF + TXT in Downloads]
+    E -->|SMTP| H[Staff-office email]
 ```
 
-**Components:**
-*   **Frontend (HTML/CSS/JS)**: Handles UI, drag-and-drop, calendar rendering, state management, and PDF preview via CSS print media.
-*   **Backend (Rust)**: Exposes a single Tauri command for SMTP email sending. All other functionality is client-side.
-*   **Data Storage**: `localStorage` for all app state (tiles, menus, settings). No server or database required.
+### Why custom Rust commands instead of plugins
 
-## 3. Lunch Program (Tauri App) - Technical Details
+All native work (folder picker, file writes, SMTP) is implemented as
+application commands in `src-tauri/src/main.rs` using `rfd` (native folder
+picker) and `std::fs`. No Tauri plugins, no capability files needed — commands
+registered via `tauri::Builder::invoke_handler` are callable by every window
+without ACL permissions. `app.withGlobalTauri: true` exposes `window.__TAURI__`
+to the non-bundler frontend (the default is `false`).
 
-The Lunch Menu Publisher is built using Tauri, allowing for a web frontend to interact with Rust-based backend functionalities.
+## 3. Frontend
 
-### 3.0. Frontend Architecture Patterns
+### 3.1 Module layout (`js/`)
 
-The JavaScript codebase follows defensive patterns to prevent crashes and data loss:
+| File | Responsibility |
+|------|----------------|
+| `state.js` | State + localStorage persistence with rollback; settings; SMTP test helper |
+| `menu-data.js` | **Pure data layer** (no DOM/localStorage): `menu.json` builder, TXT generator, missing-entrée counter, publish-plan builder. Node-testable. |
+| `publish.js` | Publish Month modal: confirmation checklist, execution, honest results, published badge, test email |
+| `pdf-export.js` | Real PDF blob generation via vendored jsPDF + html2canvas |
+| `settings.js` | Settings modal; staff email, SMTP, menu.json folder picker, statuses |
+| `calendar.js` / `editing.js` / `tiles.js` / `verses.js` / `app.js` | Editing UI and startup |
 
-**Null-Guarded DOM Access**: All `getElementById` calls are null-checked before calling `.addEventListener`. Each setup method bails early if a critical DOM element is missing (e.g., from stale cached HTML):
-```js
-const previewBtn = document.getElementById('previewBtn');
-if (!previewBtn) return;
-previewBtn.addEventListener('click', () => { ... });
-```
+### 3.2 Publish Month flow (`publish.js`)
 
-**Persistence Rollback**: All `save*()` methods in `state.js` accept an optional `prev` parameter. If `localStorage.setItem` fails (quota full), the in-memory state is rolled back to the snapshot:
-```js
-saveEntreeTiles(prev) {
-    if (!this.save(StorageKeys.ENTREE_TILES, this.entreeTiles) && prev !== undefined) {
-        this.entreeTiles = prev;
-    }
-}
-```
-Callers snapshot before mutating: `const prev = [...State.entreeTiles]; State.entreeTiles.push(tile); State.saveEntreeTiles(prev);`
+1. **Confirmation** — `MenuData.buildPublishPlan()` renders: month/year,
+   instructional-day count, missing-entrée count, and one checklist row each
+   for TXT, PDF, `menu.json`, and email. Warnings list missing setup
+   (no destination folder, no recipient, incomplete SMTP, empty menu).
+   Publish is **disabled** until a `menu.json` destination folder is configured
+   (desktop mode). Cancel/Escape closes safely — nothing is written.
+2. **Writability pre-flight** — `check_directory_writable` probes the
+   destination folder; a failure disables publishing.
+3. **Execution** (in order):
+   - TXT → `write_output_file` (Downloads)
+   - PDF → `PdfExport.generatePdf()` → `write_output_file` (Downloads)
+   - `menu.json` → `write_menu_json` (atomic replace in the configured folder)
+   - Email → `send_publish_email` (TXT attached; PDF attached **only** if a real
+     PDF was generated)
+4. **Results** — every step reports ✓/✗ with its own detail. The overall
+   verdict is "Publishing complete" **only** when `menu.json` was written;
+   otherwise "Publishing did not complete successfully".
+5. `state.lastPublished[month-year]` is recorded and a **✓ Published** badge
+   shows next to the month name.
 
-**Shared Constants**: Magic strings are eliminated via frozen constants in `state.js`:
-- `TileTypes` — `{ ENTREE, SIDE, SPECIALS, SPECIAL_EVENT }` — used for tile type comparisons across `tiles.js` and `state.js`
-- `GridIds` — `{ ENTREE, SIDE, SPECIALS, SPECIAL_EVENT }` — maps to DOM grid element IDs (`entreeGrid`, `sideGrid`, etc.)
+The browser (web) build degrades honestly: files are offered as downloads and
+email/sync-folder writes are skipped with explanatory text.
 
-**Inline Add Input**: The `addTile` flow uses an inline text input inserted into the panel (replacing `prompt()` which is unsupported in Tauri). A `committed` flag prevents double-commit from simultaneous Enter + blur events.
+### 3.3 Data model
 
-**Import Validation**: `importData()` validates backup structure before accepting any data — checks version number, array types, and object types. JSON parse errors are caught separately with a friendly user message.
+State keys (`StorageKeys` in `state.js`):
 
-### 3.1. Project Setup & Dependencies
+| Key | Description |
+|-----|-------------|
+| `lunchMenu_entreeTiles` / `sideTiles` / `specialsTiles` / `specialEventTiles` | Tile libraries |
+| `lunchMenu_menus` | Monthly menus: `{ month, year, days: { "YYYY-MM-DD": { entree, sides[], special, specialEvent, isNoSchool } }, verse }` |
+| `lunchMenu_settings` | `{ compactGridEnabled, versesEnabled, advancedVerseLookup }` |
+| `lunchMenu_currentMonth` | `{ month, year }` |
+| `lunchMenu_staffEmail` | Single staff-office recipient (migrated from legacy `pdfEmail`/`txtEmail`) |
+| `lunchMenu_smtpHost/Port/User/Password` | SMTP credentials (never exported to backups) |
+| `lunchMenu_menuJsonFolder` | menu.json destination folder |
+| `lunchMenu_lastPublished` | `{ "year-month": ISO timestamp }` map |
 
-*   **Rust**: The core backend logic is written in Rust.
-*   **Node.js/npm**: Used for managing frontend dependencies and Tauri build processes.
-*   **Tauri**: The framework for building cross-platform desktop applications using web technologies.
+Months are **0-based** internally (`getMonth()`); the published `menu.json`
+uses **1-based** months.
 
-**Key Dependencies (`src-tauri/Cargo.toml`):**
-*   `tauri = { version = "1.5.0", features = ["shell-open"] }`: Tauri framework.
-*   `serde = { version = "1.0", features = ["derive"] }`: Serialization/deserialization for Rust structs.
-*   `serde_json = "1.0"`: JSON handling.
-*   `lettre = { version = "0.11", default-features = false, features = ["builder", "smtp-transport", "rustls-tls"] }`: Email sending library. Configured for SMTP transport with Rustls for TLS.
-*   `tokio = { version = "1.36.0", features = ["full"] }`: Asynchronous runtime for Rust, used for non-blocking I/O (email sending).
-*   `dotenv = "0.15"`: For loading environment variables from a `.env` file.
+## 4. Rust backend (`src-tauri/src/main.rs`)
 
-### 3.2. Email Sending Implementation
+### 4.1 Commands
 
-The email sending logic resides in the Rust backend as a Tauri command.
+| Command | Purpose |
+|---------|---------|
+| `pick_folder()` | Native folder picker (`rfd::AsyncFileDialog`) for the menu.json destination |
+| `check_directory_writable(dir)` | Creates the folder if missing, probes it with a temp file; error = not writable |
+| `write_menu_json(directory, contents)` | **Atomic** write of `menu.json` into the destination |
+| `write_output_file(directory, file_name, base64)` | **Atomic** write of PDF/TXT; empty `directory` → user Downloads (`app.path().download_dir()`); validates file names (no path traversal) |
+| `send_publish_email(recipient, subject, body, txt_content, txt_attachment_name, pdf_base64?, pdf_attachment_name?, smtp…)` | SMTP email: short body + TXT attachment, PDF attached only when `pdf_base64` is provided |
+| `test_smtp_connection(host, port, user, password)` | Real SMTP connection probe |
 
-*   **`send_menu_email` Command**:
-    *   **Location**: `src-tauri/src/main.rs`
-    *   **Purpose**: This asynchronous Rust function is exposed to the JavaScript frontend via `#[tauri::command]`. It takes `recipient`, `subject`, and `menu_content` as arguments.
-    *   **Environment Variables**: It reads email credentials and SMTP server details from the `.env` file located at `src-tauri/.env`. These include `EMAIL_USER`, `EMAIL_PASSWORD`, `SMTP_HOST`, and `SMTP_PORT`.
-    *   **Email Construction**: Uses `lettre::Message::builder` to construct the email.
-        *   `from()`: Uses `EMAIL_USER` for the sender address.
-        *   `to()`: Sets the recipient.
-        *   `subject()`: Sets the email subject.
-        *   `multipart()`: Includes a plain text body and attaches the `menu_content` as a plain text file named `menu.txt`.
-    *   **SMTP Transport**: Configures `lettre::SmtpTransport` with `SMTP_HOST`, `SMTP_PORT`, and `Credentials` for authentication. It enforces TLS for secure communication.
-    *   **Error Handling**: Returns `Result<String, String>` to indicate success or failure, with error messages providing details.
+### 4.2 Atomic file writing
 
-### 3.3. Frontend Integration
+`atomic_write_bytes(dest, bytes)`:
 
-The JavaScript part of the Tauri application calls the Rust command.
+1. Writes a unique temp file (`.name.tmp-<pid>-<nanos>`) **in the same
+   directory**,
+2. `sync_all()`s it so the data is on disk,
+3. `std::fs::rename(temp, dest)` — an atomic replace on the same volume
+   (Windows: `MoveFileExW` / `FileRenameInfoEx`; it overwrites an existing
+   destination).
 
-*   **`email-export.js`**:
-    *   **Location**: `js/email-export.js`
-    *   **`emailTxt()` Function**:
-        *   Retrieves the `recipient` from `State.txtEmail` and the `exportContent` by calling `TextExport.generateExport()`.
-        *   Constructs the `subject` dynamically.
-        *   Calls `await tauriInvoke('send_menu_email', { recipient, subject, menuContent: exportContent });`.
-        *   Provides user feedback (alerts) for success or failure.
-    *   **`emailPdf()` Function**: Currently falls back to a `mailto:` link for PDF, as direct PDF attachment sending is not yet implemented in the Rust backend. A separate Rust command would be needed for this if required.
+Downstream consumers (other local projects watching `menu.json`, and Google
+Drive for Desktop) never observe a partially-written file. Temp files are
+removed on failure. These properties are covered by unit tests.
 
-### 3.4. Build & Deployment
+### 4.3 SMTP
 
-To build the Tauri application, navigate to the project directory in your terminal and use standard Tauri build commands:
-```bash
-npm install        # Install Node.js dependencies
-npm run tauri build # Build the application for your platform
-```
-The output executable will be found in `src-tauri/target/release`.
+Credentials resolve frontend-first, `.env` fallback (`src-tauri/.env`:
+`EMAIL_USER`, `EMAIL_PASSWORD`, `SMTP_HOST`, `SMTP_PORT`). Port `465` → implicit
+TLS (`Tls::Wrapper`); other ports → STARTTLS (`Tls::Required`).
+`builder_dangerous` connects to the configured host directly (no MX lookup).
+`.env` is gitignored — never commit credentials.
 
-## 4. Data & Export Formats
+## 5. Output formats
 
-### 4.1. Text Export Format
+### 5.1 menu.json — schema v1
 
-The **Text Export** generates plain text suitable for copying into any school information system (SIS). Each line represents one school day:
+The stable integration output for other local projects. Full spec:
+**[MENU_JSON.md](MENU_JSON.md)**.
 
-```
-Mon 9/1: Cheeseburger + Corn, Apple Slices + Bake Sale
-Tue 9/2: Chicken Tenders + Mashed Potatoes, Green Beans
-```
-
-**Rules:**
-*   One line per weekday
-*   No weekends
-*   No blank lines
-*   Format: `DayOfWeek Month/Day: Entree + Side1, Side2 + SpecialEvent`
-*   Sides are comma-separated; items are joined with ` + `
-*   Days marked NO SCHOOL are excluded
-
-### 4.2. PDF Export
-
-The PDF is generated via the browser's print dialog using a dedicated CSS print stylesheet (`css/pdf.css`). The app enters **preview mode** (hiding all UI chrome) before printing. The stylesheet uses a warm burgundy/gold/cream palette with the school logo in the header.
-
-### 4.3. Data Backup Format
-
-The **Export All Data** button produces a JSON file containing all application state:
+Summary:
 
 ```json
 {
-  "version": 1,
-  "entreeTiles": [...],
-  "sideTiles": [...],
-  "specialsTiles": [...],
-  "specialEventTiles": [...],
-  "menus": { "2026-9": { "days": {...}, "verse": {...} } },
-  "settings": {...}
+  "schemaVersion": 1,
+  "publishedAt": "2026-09-02T14:30:00.000Z",
+  "month": 9,
+  "year": 2026,
+  "verse": { "text": "…", "reference": "…" },
+  "days": [
+    { "date": "2026-09-01", "entree": "Pizza", "sides": ["Green Beans"],
+      "specials": "Reuben", "event": "Bake Sale", "noSchool": false }
+  ]
 }
 ```
 
-This file can be imported later via **Import Data** to restore the entire application state.
+- Every calendar day of the month is included; `noSchool: true` for weekends
+  and NO SCHOOL days (with empty entries).
+- Consistent empty values (`""` / `[]`), never omitted keys, ISO-8601 dates.
+- Built by the pure `MenuData.buildMenuJson()` and written atomically.
 
-## 5. Email Export Details
+### 5.2 SIS text export
 
-The email export is a standalone feature for sending the monthly text menu directly to a recipient. It does not require any external processing pipeline.
+`Lunch Menu - September 2026.txt` — one line per instructional day with
+content, e.g. `Mon 9/1: Pizza + Green Beans, Roll + [Reuben] + Bake Sale`.
+Exact rules: **[TEXT_EXPORT.md](TEXT_EXPORT.md)**. Generated by the pure
+`MenuData.generateTxt()`.
 
-*   **Sending Protocol**: SMTP (Simple Mail Transfer Protocol) over TLS for secure outgoing mail.
-*   **Attachment Format**: The menu data is sent as a plain text file named `menu.txt`.
-*   **Email Content**:
-    *   **Sender**: The `EMAIL_USER` configured in the Tauri app's `src-tauri/.env`.
-    *   **Recipient**: The address configured in the app's Settings (e.g., an office manager or SIS administrator).
-    *   **Subject Line**: Follows the pattern `Menu Export - Month Year` (e.g., "Menu Export - May 2026").
-    *   **Body**: A short explanatory text.
-    *   **Attachment**: `menu.txt` containing the parsed menu data in a line-by-line format.
-*   **Security Considerations**:
-    *   **TLS**: SMTP is configured to use TLS for encrypted communication.
-    *   **App Passwords**: If using email providers with Two-Factor Authentication (2FA) (e.g., Gmail), it is highly recommended to use an "App Password" instead of your main account password for programmatic access. This limits the scope of access in case credentials are compromised.
-    *   **Environment Variables**: Credentials are stored in `.env` files and loaded at runtime, preventing them from being hardcoded directly into the source code. These `.env` files should be excluded from version control (`.gitignore`).
+### 5.3 PDF
 
-## 6. Development Workflow
+Generated client-side (`js/pdf-export.js`) with vendored jsPDF + html2canvas,
+mirroring the landscape letter print design (`css/pdf.css`). The bundles are
+copied from `node_modules` into `js/vendor/` by `npm install` via
+`scripts/copy-vendor.js`. If the bundles are missing or generation fails, the
+UI says so and points to **Preview → Print → "Save as PDF"** — it never claims
+a PDF was made when it wasn't.
 
-### 6.1. Setting Up the Development Environment
+## 6. Settings
 
-1.  **Install Rust**: Follow instructions on [rustup.rs](https://rustup.rs/).
-2.  **Install Node.js**: Use a version manager like `nvm` or download from [nodejs.org](https://nodejs.org/).
-3.  **Install Tauri Prerequisites**: Refer to the [Tauri documentation](https://tauri.app/v1/guides/getting-started/prerequisites) for your operating system.
-4.  **Clone Repository**: `git clone <repository-url>`
-5.  **Install Frontend Dependencies**: `npm install` in the project root.
-6.  **Create `.env`**: Create `src-tauri/.env` in the project root and configure `EMAIL_USER`, `EMAIL_PASSWORD`, `SMTP_HOST`, `SMTP_PORT`.
-7.  **Run Development**: `npm run tauri dev`
+See **[SETTINGS_SPEC.md](SETTINGS_SPEC.md)**. Highlights: single staff-office
+recipient, SMTP fields + Test Connection + Send Test Email, native folder
+picker for the menu.json destination with live status, verse toggles, compact
+grid, and backup/restore (SMTP password excluded from backups).
 
-### 6.2. Testing Procedures
+## 7. Tests
 
-*   **Unit Tests**: Implement unit tests for the email sending Rust command.
-*   **Integration Tests**:
-    1.  Start the Tauri app in development mode.
-    2.  Generate a menu and send the TXT export.
-    3.  Verify the email arrives at the configured recipient with the `menu.txt` attachment.
-*   **Manual Testing**: Ensure the full flow from menu creation to print preview and email export works as expected.
+| Suite | Command | Covers |
+|-------|---------|--------|
+| Rust unit tests | `cargo test` (in `src-tauri/`) | Atomic write (create/replace/cleanup), failure when dir missing, `menu.json` round-trip, file-name validation, writability probe |
+| JS unit tests | `npm test` (Node's built-in runner, no deps) | `menu.json` schema shape/consistency, TXT format + exclusions, missing-entrée counting, publish-plan gating/warnings |
 
-### 6.3. Troubleshooting Common Issues
+The JS tests target the pure `MenuData` module (`tests/menu-data.test.js`),
+which is why the data layer must stay DOM/localStorage-free.
 
-*   **Email Sending Failures**:
-    *   Check `src-tauri/.env` for correct credentials and SMTP server details.
-    *   Verify network connectivity to the SMTP server.
-    *   Check if your email provider requires "App Passwords" for programmatic access.
-    *   Review Tauri app console logs for Rust backend errors related to email sending.
-*   **Incorrect Menu Data**:
-    *   Inspect the `menu.txt` attachment to ensure its format is correct.
-    *   Check that weekends and NO SCHOOL days are properly excluded.
+## 8. Build & run
 
-## 7. Future Enhancements / Considerations
+```bash
+npm install          # installs deps and copies js/vendor bundles
+npm run tauri dev    # desktop app (serves from http://localhost:1420)
+npm test             # JS unit tests
+cd src-tauri && cargo test   # Rust unit tests
+npm run tauri build  # production .msi (see README-PACKAGING.md)
+```
 
-*   **Richer Data Format**: Consider sending menu data in JSON format within the email attachment for easier machine parsing.
-*   **Error Reporting**: Implement more sophisticated error logging and reporting, potentially integrating with a centralized logging service.
-*   **Configuration UI**: Provide a UI in Settings to configure email sending parameters rather than relying solely on the `.env` file.
-*   **PDF Handling**: Implement Rust-side logic to attach the generated PDF directly to the email from the Tauri app, instead of relying on `mailto:` for PDF exports.
-*   **Security Audit**: Conduct a security audit of the email credential handling and network communication to ensure best practices are followed, especially if deployed in a production environment.
+The Tauri `beforeBuildCommand` copies the frontend into `dist/`, which includes
+`js/vendor/`.
+
+## 9. Deferred limitations
+
+- **PDF is generated in-app, not by the OS print system.** The jsPDF render
+  mirrors the print CSS but is not pixel-identical to the printer driver's
+  output; use Preview/Print for the final printer-honest copy.
+- **Email is best-effort after the files are saved.** An SMTP failure never
+  rolls back the saved files and is reported clearly.
+- **No Google Drive API.** The app writes to a locally-synced folder; Google
+  Drive for Desktop does the syncing.
+- **No archive/history.** Re-publishing replaces the previous outputs.

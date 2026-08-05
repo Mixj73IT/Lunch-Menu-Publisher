@@ -47,6 +47,10 @@ const Calendar = {
         this.updateMonthLabel();
         this.renderCalendar();
         this.renderVerse();
+        // Keep the "Published" indicator in sync with month navigation.
+        if (typeof Publish !== 'undefined' && Publish.updateBadge) {
+            Publish.updateBadge();
+        }
     },
 
     updateMonthLabel() {

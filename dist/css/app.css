@@ -923,6 +923,56 @@ body.preview-mode #printPreviewBtn {
     height: 18px;
 }
 
+.setting-hint {
+    display: block;
+    margin-top: 4px;
+    font-size: 0.85em;
+    opacity: 0.75;
+}
+
+/* menu.json destination folder row */
+.setting-folder {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    cursor: default;
+}
+
+.folder-picker-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.folder-picker-row input[type="text"] {
+    flex: 1;
+    padding: 8px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    font-size: 13px;
+    color: var(--color-text-muted);
+    background: var(--color-bg);
+    min-width: 0;
+}
+
+.setting-email-status {
+    cursor: default;
+    padding: 4px 0 8px 0;
+}
+
+.setting-status {
+    font-size: 0.85em;
+    line-height: 1.4;
+}
+
+.setting-status.ok {
+    color: #1e7e34;
+}
+
+.setting-status.warn {
+    color: #b3541e;
+}
+
 /* Verse Selector */
 .verse-tabs {
     display: flex;
@@ -987,27 +1037,181 @@ body.preview-mode #printPreviewBtn {
     width: 100%;
 }
 
-/* Export */
-#exportText {
-    width: 100%;
-    min-height: 200px;
-    font-family: monospace;
-    font-size: 0.85rem;
-    padding: 10px;
-    border: 1px solid var(--color-border);
-    border-radius: 4px;
-    resize: vertical;
-    margin: 10px 0;
+/* ========================================
+   PUBLISH MONTH MODAL
+   ======================================== */
+.modal-content.publish-modal {
+    max-width: 620px;
 }
 
-#copyExportBtn {
-    width: 100%;
+.publish-headline {
+    font-family: var(--font-serif);
+    font-size: 1.35rem;
+    color: var(--color-text);
+    margin-bottom: 4px;
+}
+
+.publish-subline {
+    color: var(--color-text-muted);
+    margin-bottom: 14px;
+    font-size: 0.92rem;
+}
+
+.publish-checklist {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 14px 0;
+}
+
+.checklist-item {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 10px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    margin-bottom: 8px;
+    background: var(--color-bg);
+}
+
+.check-ok {
+    color: #1e7e34;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.check-warn {
+    color: #b3541e;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.check-fail {
+    color: #dc3545;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.checklist-text {
+    font-size: 0.92rem;
+    line-height: 1.45;
+}
+
+.checklist-detail {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    margin-top: 2px;
+    word-break: break-word;
+}
+
+.publish-warnings {
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 6px;
+    padding: 10px 14px;
+    margin-bottom: 14px;
+}
+
+.publish-warnings h4 {
+    font-size: 0.9rem;
+    margin-bottom: 4px;
+}
+
+.publish-warnings p {
+    font-size: 0.87rem;
+    line-height: 1.45;
+    color: #664d03;
+}
+
+.publish-folder-status {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    margin: 0 0 12px 0;
+}
+
+.publish-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 4px;
+}
+
+.publish-hint {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    margin-top: 10px;
+}
+
+.publish-verdict {
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-bottom: 14px;
+    font-weight: 600;
+}
+
+.publish-verdict.ok {
+    background: #d4edda;
+    border: 1px solid #28a745;
+    color: #155724;
+}
+
+.publish-verdict.fail {
+    background: #f8d7da;
+    border: 1px solid #dc3545;
+    color: #721c24;
+}
+
+/* Published badge next to the month selector */
+.published-badge {
+    background: #28a745;
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 10px;
+    letter-spacing: 0.3px;
+}
+
+/* Publish Month header button - brand burgundy, clearly the primary action */
+.btn-publish {
+    background: var(--pdf-burgundy);
+    color: #fff;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.btn-publish:hover {
+    background: #6d1414;
+}
+
+.btn-publish:disabled {
+    background: #b8a8a0;
+    cursor: not-allowed;
+}
+
+/* Panel helper text (e.g. Specials meaning) */
+.panel-helper {
+    font-size: 0.72rem;
+    color: var(--color-text-muted);
+    text-align: center;
+    opacity: 0.85;
+}
+
+/* Print note: shown on the PDF to explain Specials */
+.print-note {
+    display: none;
 }
 
 /* ========================================
    PRINT-ONLY HEADER (hidden in app, shown in preview/print)
    ======================================== */
 .print-header {
+    display: none;
+}
+
+/* Collapse the school name when no name has been configured */
+.print-school-name:empty {
     display: none;
 }
 
@@ -1018,6 +1222,17 @@ body.preview-mode .print-header {
     margin-bottom: 6px;
     padding-bottom: 8px;
     border-bottom: 2px solid var(--pdf-gold);
+}
+
+/* Specials explanation - visible in preview/print output */
+body.preview-mode .print-note {
+    display: block;
+    font-family: var(--font-sans);
+    font-size: 8.5pt;
+    color: var(--pdf-text-muted);
+    font-style: italic;
+    text-align: center;
+    margin: 0 0 6px 0;
 }
 
 /* Refined page border - subtle double-line frame in preview mode */

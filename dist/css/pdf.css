@@ -22,6 +22,17 @@
         display: flex !important;
     }
 
+    /* Specials explanation footer/note on the printed menu */
+    .print-note {
+        display: block !important;
+        font-family: 'Open Sans', 'Segoe UI', sans-serif !important;
+        font-size: 8.5pt !important;
+        color: var(--pdf-text-muted) !important;
+        font-style: italic !important;
+        text-align: center !important;
+        margin: 0 0 6px 0 !important;
+    }
+
     /* Page setup - tighter margins to fill the page */
     @page {
         size: letter landscape;

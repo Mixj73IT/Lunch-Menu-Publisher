@@ -10,6 +10,14 @@ const StorageKeys = {
     MENUS: 'lunchMenu_menus',
     SETTINGS: 'lunchMenu_settings',
     CURRENT_MONTH: 'lunchMenu_currentMonth',
+    STAFF_EMAIL: 'lunchMenu_staffEmail',
+    SMTP_HOST: 'lunchMenu_smtpHost',
+    SMTP_PORT: 'lunchMenu_smtpPort',
+    SMTP_USER: 'lunchMenu_smtpUser',
+    SMTP_PASSWORD: 'lunchMenu_smtpPassword',
+    MENU_JSON_FOLDER: 'lunchMenu_menuJsonFolder',
+    LAST_PUBLISHED: 'lunchMenu_lastPublished',
+    // Legacy keys, kept only for one-time migration to STAFF_EMAIL.
     PDF_EMAIL: 'lunchMenu_pdfEmail',
     TXT_EMAIL: 'lunchMenu_txtEmail'
 };
@@ -27,6 +35,11 @@ const GridIds = Object.freeze({
     SPECIALS: 'specialsGrid',
     SPECIAL_EVENT: 'specialGrid'
 });
+
+const MONTH_NAMES = Object.freeze([
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+]);
 
 const DEFAULT_ENTREES = [
     { id: 'entree-1', name: 'Chicken Nuggets', type: TileTypes.ENTREE },
@@ -81,8 +94,13 @@ const State = {
     settings: {},
     currentMonth: new Date().getMonth(),
     currentYear: new Date().getFullYear(),
-    pdfEmail: '',
-    txtEmail: '',
+    staffEmail: '',
+    smtpHost: '',
+    smtpPort: 587,
+    smtpUser: '',
+    smtpPassword: '',
+    menuJsonFolder: '',
+    lastPublished: {},
     undoStack: [],
     undoMaxSize: 20,
 
@@ -101,8 +119,26 @@ const State = {
         this.specialEventTiles = this.load(StorageKeys.SPECIAL_EVENT_TILES) || [];
         this.menus = this.load(StorageKeys.MENUS) || {};
         this.settings = this.load(StorageKeys.SETTINGS) || {};
-        this.pdfEmail = this.load(StorageKeys.PDF_EMAIL) || '';
-        this.txtEmail = this.load(StorageKeys.TXT_EMAIL) || '';
+        this.smtpHost = this.load(StorageKeys.SMTP_HOST) || '';
+        const savedPort = this.load(StorageKeys.SMTP_PORT);
+        this.smtpPort = (typeof savedPort === 'number' && savedPort > 0) ? savedPort : 587;
+        this.smtpUser = this.load(StorageKeys.SMTP_USER) || '';
+        this.smtpPassword = this.load(StorageKeys.SMTP_PASSWORD) || '';
+        this.menuJsonFolder = this.load(StorageKeys.MENU_JSON_FOLDER) || '';
+        this.lastPublished = this.load(StorageKeys.LAST_PUBLISHED) || {};
+
+        // Migration: the old app had separate PDF/TXT recipients. Consolidate
+        // them into the single staff-office recipient (TXT took precedence).
+        const staffEmail = this.load(StorageKeys.STAFF_EMAIL) || '';
+        const legacyPdfEmail = this.load(StorageKeys.PDF_EMAIL) || '';
+        const legacyTxtEmail = this.load(StorageKeys.TXT_EMAIL) || '';
+        this.staffEmail = staffEmail || legacyTxtEmail || legacyPdfEmail;
+        if (!staffEmail && this.staffEmail) {
+            const prev = '';
+            this.save(StorageKeys.STAFF_EMAIL, this.staffEmail);
+            this.save(StorageKeys.PDF_EMAIL, prev);
+            this.save(StorageKeys.TXT_EMAIL, prev);
+        }
 
         const savedDate = this.load(StorageKeys.CURRENT_MONTH);
         if (savedDate) {
@@ -136,7 +172,7 @@ const State = {
             this.saveSpecialEventTiles(prev);
         }
 
-        // Migration: fix stale 'special' type → 'specialEvent' in stored tiles
+        // Migration: fix stale 'special' type to 'specialEvent' in stored tiles
         if (Array.isArray(this.specialEventTiles)) {
             let migrated = false;
             const prev = this.specialEventTiles;
@@ -149,7 +185,6 @@ const State = {
             });
             if (migrated) {
                 this.saveSpecialEventTiles(prev);
-                // Migrated special event tile types from "special" to "specialEvent"
             }
         } else {
             const prev = this.specialEventTiles;
@@ -167,7 +202,7 @@ const State = {
             const data = localStorage.getItem(key);
             return data ? JSON.parse(data) : null;
         } catch (e) {
-            // Error loading from localStorage — silently handled by returning null
+            // Error loading from localStorage - silently handled by returning null
             this.showError('Failed to load saved data. Your settings may have been reset.');
             return null;
         }
@@ -178,7 +213,7 @@ const State = {
             localStorage.setItem(key, JSON.stringify(data));
             return true;
         } catch (e) {
-            // Error saving to localStorage — user already notified via showError toast
+            // Error saving to localStorage - user already notified via showError toast
             this.showError('Failed to save data. Your browser storage may be full. Please clear some data.');
             return false;
         }
@@ -191,18 +226,18 @@ const State = {
         const toast = document.createElement('div');
         toast.className = 'error-toast';
         toast.textContent = message;
-        toast.style.cssText = `
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #dc3545;
-            color: white;
-            padding: 12px 20px;
-            border-radius: 4px;
-            z-index: 1000;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-            animation: slideIn 0.3s ease;
-        `;
+        toast.style.cssText = [
+            'position: fixed;',
+            'bottom: 20px;',
+            'right: 20px;',
+            'background: #dc3545;',
+            'color: white;',
+            'padding: 12px 20px;',
+            'border-radius: 4px;',
+            'z-index: 1000;',
+            'box-shadow: 0 2px 8px rgba(0,0,0,0.2);',
+            'animation: slideIn 0.3s ease;'
+        ].join(' ');
         document.body.appendChild(toast);
 
         setTimeout(() => {
@@ -218,18 +253,18 @@ const State = {
         const toast = document.createElement('div');
         toast.className = 'loading-toast';
         toast.textContent = message;
-        toast.style.cssText = `
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: #0d6efd;
-            color: white;
-            padding: 12px 20px;
-            border-radius: 4px;
-            z-index: 1000;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-            animation: slideIn 0.3s ease;
-        `;
+        toast.style.cssText = [
+            'position: fixed;',
+            'bottom: 20px;',
+            'right: 20px;',
+            'background: #0d6efd;',
+            'color: white;',
+            'padding: 12px 20px;',
+            'border-radius: 4px;',
+            'z-index: 1000;',
+            'box-shadow: 0 2px 8px rgba(0,0,0,0.2);',
+            'animation: slideIn 0.3s ease;'
+        ].join(' ');
         document.body.appendChild(toast);
     },
 
@@ -264,7 +299,7 @@ const State = {
             badge = document.createElement('div');
             badge.id = 'autosaveBadge';
             badge.className = 'autosave-badge';
-            badge.textContent = '✓ Saved';
+            badge.textContent = 'Saved';
             document.body.appendChild(badge);
         }
         badge.classList.add('visible');
@@ -272,6 +307,98 @@ const State = {
         badge._timeout = setTimeout(() => {
             badge.classList.remove('visible');
         }, 1500);
+    },
+
+    /* ---- Staff-office email (single recipient) ---- */
+    saveStaffEmail(prev) {
+        if (!this.save(StorageKeys.STAFF_EMAIL, this.staffEmail) && prev !== undefined) {
+            this.staffEmail = prev;
+        }
+    },
+
+    /* ---- menu.json destination folder ---- */
+    saveMenuJsonFolder(prev) {
+        if (!this.save(StorageKeys.MENU_JSON_FOLDER, this.menuJsonFolder) && prev !== undefined) {
+            this.menuJsonFolder = prev;
+        }
+    },
+
+    /* ---- Last published snapshots ---- */
+    markPublished(month, year, publishedAt) {
+        const prev = { ...this.lastPublished };
+        this.lastPublished[this.getMenuKey(month, year)] = publishedAt || new Date().toISOString();
+        if (!this.save(StorageKeys.LAST_PUBLISHED, this.lastPublished) && prev !== undefined) {
+            this.lastPublished = prev;
+        }
+    },
+
+    getLastPublished(month, year) {
+        return this.lastPublished[this.getMenuKey(month, year)] || null;
+    },
+
+    /* ---- SMTP settings ---- */
+    saveSmtpHost(prev) {
+        if (!this.save(StorageKeys.SMTP_HOST, this.smtpHost) && prev !== undefined) {
+            this.smtpHost = prev;
+        }
+    },
+
+    saveSmtpPort(prev) {
+        if (!this.save(StorageKeys.SMTP_PORT, this.smtpPort) && prev !== undefined) {
+            this.smtpPort = prev;
+        }
+    },
+
+    saveSmtpUser(prev) {
+        if (!this.save(StorageKeys.SMTP_USER, this.smtpUser) && prev !== undefined) {
+            this.smtpUser = prev;
+        }
+    },
+
+    saveSmtpPassword(prev) {
+        if (!this.save(StorageKeys.SMTP_PASSWORD, this.smtpPassword) && prev !== undefined) {
+            this.smtpPassword = prev;
+        }
+    },
+
+    /**
+     * Test the SMTP connection.
+     * In the Tauri desktop app this asks the Rust backend to open a real
+     * connection to the mail server. In the browser it cannot work (no SMTP
+     * client exists there), so we tell the user instead of pretending.
+     */
+    async testSmtpConnection(host, port, user, password) {
+        const h = (host !== undefined ? host : this.smtpHost) || '';
+        const p = (port !== undefined ? port : this.smtpPort) || 587;
+        const u = (user !== undefined ? user : this.smtpUser) || '';
+        const pw = (password !== undefined ? password : this.smtpPassword) || '';
+
+        if (!h || !u || !pw) {
+            this.showError('Missing SMTP credentials. Please fill in host, user, and password.');
+            return;
+        }
+
+        if (!window.__TAURI__?.invoke) {
+            this.showError('SMTP connection testing is only available in the desktop app.');
+            return;
+        }
+
+        this.showLoading('Testing SMTP connection...');
+        try {
+            await window.__TAURI__.invoke('test_smtp_connection', {
+                host: h,
+                port: p,
+                user: u,
+                password: pw
+            });
+            this.showSaved();
+            alert('SMTP connection successful!');
+        } catch (error) {
+            console.error('SMTP connection test failed:', error);
+            this.showError('SMTP test failed. Check your host, port, user, and password, then try again.');
+        } finally {
+            this.hideLoading();
+        }
     },
 
     /* ---- Export all data as JSON ---- */
@@ -285,15 +412,19 @@ const State = {
             specialEventTiles: this.specialEventTiles,
             menus: this.menus,
             settings: this.settings,
-            pdfEmail: this.pdfEmail,
-            txtEmail: this.txtEmail
+            staffEmail: this.staffEmail,
+            menuJsonFolder: this.menuJsonFolder,
+            smtpHost: this.smtpHost,
+            smtpPort: this.smtpPort,
+            smtpUser: this.smtpUser
+            // NOTE: the SMTP password is intentionally NOT exported in backups.
         };
         const json = JSON.stringify(data, null, 2);
         const blob = new Blob([json], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `lunch-menu-backup-${new Date().toISOString().slice(0, 10)}.json`;
+        a.download = 'lunch-menu-backup-' + new Date().toISOString().slice(0, 10) + '.json';
         a.click();
         URL.revokeObjectURL(url);
         this.showSaved();
@@ -308,7 +439,6 @@ const State = {
                 try {
                     data = JSON.parse(e.target.result);
                 } catch (parseErr) {
-                    // JSON parse failed — user already notified via showError toast
                     this.showError('The file is not valid JSON. Please select a backup file.');
                     return;
                 }
@@ -354,15 +484,34 @@ const State = {
                     this.settings = data.settings;
                     this.saveSettings(prev);
                 }
-                if (data.pdfEmail !== undefined) {
-                    const prev = this.pdfEmail;
-                    this.pdfEmail = data.pdfEmail;
-                    this.savePdfEmail(prev);
+                // Backward compatible: old backups used pdfEmail/txtEmail.
+                const importedStaffEmail = data.staffEmail !== undefined
+                    ? data.staffEmail
+                    : (data.txtEmail || data.pdfEmail || '');
+                if (importedStaffEmail !== undefined) {
+                    const prev = this.staffEmail;
+                    this.staffEmail = importedStaffEmail;
+                    this.saveStaffEmail(prev);
                 }
-                if (data.txtEmail !== undefined) {
-                    const prev = this.txtEmail;
-                    this.txtEmail = data.txtEmail;
-                    this.saveTxtEmail(prev);
+                if (data.menuJsonFolder !== undefined) {
+                    const prev = this.menuJsonFolder;
+                    this.menuJsonFolder = data.menuJsonFolder;
+                    this.saveMenuJsonFolder(prev);
+                }
+                if (typeof data.smtpHost === 'string') {
+                    const prev = this.smtpHost;
+                    this.smtpHost = data.smtpHost;
+                    this.saveSmtpHost(prev);
+                }
+                if (typeof data.smtpPort === 'number' && data.smtpPort > 0) {
+                    const prev = this.smtpPort;
+                    this.smtpPort = data.smtpPort;
+                    this.saveSmtpPort(prev);
+                }
+                if (typeof data.smtpUser === 'string') {
+                    const prev = this.smtpUser;
+                    this.smtpUser = data.smtpUser;
+                    this.saveSmtpUser(prev);
                 }
                 alert('Data imported successfully! The page will now reload.');
                 location.reload();
@@ -411,20 +560,8 @@ const State = {
         }
     },
 
-    savePdfEmail(prev) {
-        if (!this.save(StorageKeys.PDF_EMAIL, this.pdfEmail) && prev !== undefined) {
-            this.pdfEmail = prev;
-        }
-    },
-
-    saveTxtEmail(prev) {
-        if (!this.save(StorageKeys.TXT_EMAIL, this.txtEmail) && prev !== undefined) {
-            this.txtEmail = prev;
-        }
-    },
-
     getMenuKey(month, year) {
-        return `${year}-${month}`;
+        return year + '-' + month;
     },
 
     getMenu(month, year) {

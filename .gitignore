@@ -4,6 +4,7 @@ node_modules/
 # Tauri / Rust
 src-tauri/target/
 src-tauri/Cargo.lock
+src-tauri/gen/
 
 # IDE
 .vscode/
@@ -34,3 +35,6 @@ kjv-cleaned.json
 
 # Build output
 dist/
+
+# Vendored frontend bundles (copied from node_modules by npm install)
+js/vendor/
