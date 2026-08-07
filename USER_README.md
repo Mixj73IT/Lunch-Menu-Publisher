@@ -77,8 +77,10 @@ printed design first.
    `menu.json`, and the email.
 3. Fix anything in **"Before you publish"** if needed, or just proceed.
 4. Click **Publish Month**. Each output reports its own result, honestly.
-   Publishing is only reported complete when `menu.json` was written.
-5. A **✓ Published** badge appears next to the month name.
+   The final result is **complete** only when every step succeeds, **partial**
+   when `menu.json` succeeds but another step fails, and **failed** when
+   `menu.json` is not written.
+5. A **✓ Published** badge appears next to the month name after a complete publish.
 
 Re-publishing a month simply overwrites the previous PDF, TXT, and `menu.json`
 — no history or archives are kept.
@@ -87,11 +89,13 @@ Re-publishing a month simply overwrites the previous PDF, TXT, and `menu.json`
 
 - **"menu.json was NOT written"**: the destination folder is unavailable or
   not writable. Choose a different folder in Settings and publish again.
-- **Email failed**: verify SMTP settings with **Test Connection** and
-  **Send Test Email**. The PDF/TXT/`menu.json` files are still saved even if
-  the email fails.
+- **Published with issues**: the files may be saved, but a configured email
+  or PDF step failed. Review the checklist and retry after fixing the reported
+  issue.
 - **PDF not generated**: automatic PDF generation needs the app's components
   (`npm install` in the project). Use **Preview → Print → "Save as PDF"**
   instead — that always works.
+- **No staff-office email configured**: the publish result is marked partial
+  until a recipient and working SMTP settings are configured.
 - **Menu data missing after reopening**: restore from a backup via Settings →
   **Import Data** (backups are made with **Export All Data**).

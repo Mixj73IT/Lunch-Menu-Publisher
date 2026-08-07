@@ -72,10 +72,11 @@ to the non-bundler frontend (the default is `false`).
    - Email → `send_publish_email` (TXT attached; PDF attached **only** if a real
      PDF was generated)
 4. **Results** — every step reports ✓/✗ with its own detail. The overall
-   verdict is "Publishing complete" **only** when `menu.json` was written;
-   otherwise "Publishing did not complete successfully".
+   verdict is **complete** only when every publish step succeeds, **partial**
+   when `menu.json` succeeds but another step fails, and **failed** when
+   `menu.json` is not written.
 5. `state.lastPublished[month-year]` is recorded and a **✓ Published** badge
-   shows next to the month name.
+   shows next to the month name after a complete publish.
 
 The browser (web) build degrades honestly: files are offered as downloads and
 email/sync-folder writes are skipped with explanatory text.
@@ -214,7 +215,8 @@ The Tauri `beforeBuildCommand` copies the frontend into `dist/`, which includes
   mirrors the print CSS but is not pixel-identical to the printer driver's
   output; use Preview/Print for the final printer-honest copy.
 - **Email is best-effort after the files are saved.** An SMTP failure never
-  rolls back the saved files and is reported clearly.
+  rolls back the saved files and is reported clearly; the publish result is
+  partial rather than complete until the configured email succeeds.
 - **No Google Drive API.** The app writes to a locally-synced folder; Google
   Drive for Desktop does the syncing.
 - **No archive/history.** Re-publishing replaces the previous outputs.

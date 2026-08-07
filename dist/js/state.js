@@ -342,6 +342,16 @@ const State = {
         }
     },
 
+    clearPublished(month, year) {
+        const key = this.getMenuKey(month, year);
+        if (!this.lastPublished[key]) return;
+        const previous = { ...this.lastPublished };
+        delete this.lastPublished[key];
+        if (!this.save(StorageKeys.LAST_PUBLISHED, this.lastPublished)) {
+            this.lastPublished = previous;
+        }
+    },
+
     getLastPublished(month, year) {
         return this.lastPublished[this.getMenuKey(month, year)] || null;
     },

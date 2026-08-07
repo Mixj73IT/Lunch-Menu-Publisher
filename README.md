@@ -46,8 +46,8 @@ collaboration, no archive system.
 ### Publish Month (one button)
 - **Confirmation checklist** — month/year, missing-entrée count, and exactly
   what will be produced (PDF, TXT, `menu.json`, email)
-- **Honest results** — every output reports its own success/failure; publishing
-  is only "complete" when `menu.json` was written
+- **Honest results** — every output reports its own success/failure; the final
+  result distinguishes complete, partial, and failed publishes
 - **Cancel-safe** — nothing happens until you confirm
 - **✓ Published badge** on the month once published
 
@@ -76,7 +76,7 @@ collaboration, no archive system.
 3. **Build the menu** — navigate months, drag tiles onto days, mark NO SCHOOL
 4. **Publish** — click **Publish Month**, review the checklist, confirm
 5. **Done** — PDF + TXT in Downloads, `menu.json` synced to Google Drive,
-   email sent to the office
+   and the staff-office email reported as sent (when configured).
 
 ---
 

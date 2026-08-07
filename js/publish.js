@@ -8,8 +8,8 @@
  *   3. menu.json         -> the configured Google Drive-synced folder (atomic)
  *   4. The staff-office email (TXT always attached; PDF only when generated)
  *
- * The workflow is honest: every step reports its own success/failure and the
- * overall result is only "complete" when menu.json was actually written.
+ * Every step reports its own success/failure. The final banner distinguishes a
+ * complete publish from a partial publish or a failed menu.json write.
  */
 
 const Publish = (function () {
@@ -113,7 +113,6 @@ const Publish = (function () {
         body.appendChild(sub);
 
         const list = el('ul', 'publish-checklist');
-
         const savedToDownloads = plan.browserMode
             ? 'downloaded (the desktop app saves files to Downloads)'
             : 'saved to your Downloads folder';
@@ -239,7 +238,6 @@ const Publish = (function () {
 
         const results = [];
         const record = (key, label, ok, detail) => results.push({ key, label, ok, detail });
-
         const tauri = isTauri();
 
         // --- 1. TXT file -------------------------------------------------
@@ -289,7 +287,6 @@ const Publish = (function () {
 
         // --- 3. menu.json (required integration output) -------------------
         const jsonText = JSON.stringify(plan.json, null, 2);
-        let jsonOk = false;
         try {
             if (tauri) {
                 const path = await window.__TAURI__.invoke('write_menu_json', {
@@ -302,7 +299,6 @@ const Publish = (function () {
                 record('json', 'menu.json', true,
                     'Downloaded (the sync-folder write requires the desktop app)');
             }
-            jsonOk = true;
         } catch (err) {
             record('json', 'menu.json', false,
                 `menu.json was NOT written: ${err}. Publishing did not complete successfully.`);
@@ -340,12 +336,13 @@ const Publish = (function () {
         }
 
         // --- 5. Record published snapshot + verdict -----------------------
-        if (jsonOk) {
+        const verdict = MenuData.buildVerdict(results, plan.monthLabel);
+        if (verdict.status === 'complete') {
             State.markPublished(State.currentMonth, State.currentYear, plan.json.publishedAt);
-            updateBadge();
+        } else {
+            State.clearPublished(State.currentMonth, State.currentYear);
         }
-
-        const verdict = MenuData.buildVerdict(jsonOk, plan.monthLabel);
+        updateBadge();
 
         renderResults(results, verdict);
         isRunning = false;
@@ -355,9 +352,10 @@ const Publish = (function () {
         const body = document.getElementById('publishModalBody');
         body.innerHTML = '';
 
-        const banner = el('div', verdict.startsWith('Publishing complete')
-            ? 'publish-verdict ok'
-            : 'publish-verdict fail', verdict);
+        const verdictClass = verdict.status === 'complete'
+            ? 'ok'
+            : (verdict.status === 'partial' ? 'partial' : 'fail');
+        const banner = el('div', `publish-verdict ${verdictClass}`, verdict.message);
         body.appendChild(banner);
 
         const list = el('ul', 'publish-checklist');

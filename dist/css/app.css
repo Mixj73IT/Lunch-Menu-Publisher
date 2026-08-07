@@ -1184,6 +1184,12 @@ body.preview-mode #printPreviewBtn {
     color: #155724;
 }
 
+.publish-verdict.partial {
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    color: #664d03;
+}
+
 .publish-verdict.fail {
     background: #f8d7da;
     border: 1px solid #dc3545;
