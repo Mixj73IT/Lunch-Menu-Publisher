@@ -3,10 +3,8 @@
  */
 
 const Calendar = {
-    monthNames: [
-        'January', 'February', 'March', 'April', 'May', 'June',
-        'July', 'August', 'September', 'October', 'November', 'December'
-    ],
+    // Single source of truth: MenuData.MONTH_NAMES (menu-data.js loads first)
+    monthNames: MenuData.MONTH_NAMES,
 
     dayNames: ['S', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'S'],
 
@@ -275,28 +273,6 @@ const Calendar = {
         this.renderCalendar();
     },
 
-    copyFromPreviousMonth() {
-        const prevMonth = State.currentMonth === 0 ? 11 : State.currentMonth - 1;
-        const prevYear = State.currentMonth === 0 ? State.currentYear - 1 : State.currentYear;
-        const prevMenu = State.getMenu(prevMonth, prevYear);
-
-        if (Object.keys(prevMenu.days).length === 0) {
-            alert('No data found for the previous month.');
-            return;
-        }
-
-        if (!confirm('Copy all menu data from the previous month? This will overwrite the current month.')) return;
-
-        State.pushUndo();
-        const currentMenu = State.getMenu(State.currentMonth, State.currentYear);
-        // Copy day data but keep the current verse
-        const currentVerse = currentMenu.verse;
-        currentMenu.days = JSON.parse(JSON.stringify(prevMenu.days));
-        currentMenu.verse = currentVerse;
-        State.saveMenu(currentMenu);
-        State.showSaved();
-        this.render();
-    },
 
     toggleNoSchool(date) {
         State.pushUndo();

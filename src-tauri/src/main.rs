@@ -4,7 +4,7 @@
 )]
 
 use base64::{engine::general_purpose, Engine as _};
-use dotenv::dotenv;
+use dotenvy::dotenv;
 use lettre::message::{Attachment, Message, MultiPart, SinglePart};
 use lettre::transport::smtp::authentication::Credentials;
 use lettre::transport::smtp::client::{Tls, TlsParameters};
@@ -46,13 +46,13 @@ fn resolve_smtp(
 }
 
 fn build_mailer_from(
-    host: String,
+    host: &str,
     port: u16,
     user: String,
     password: String,
 ) -> Result<SmtpTransport, String> {
     let creds = Credentials::new(user, password);
-    let tls_params = TlsParameters::builder(host.clone())
+    let tls_params = TlsParameters::builder(host.to_owned())
         .build()
         .map_err(|e| format!("Failed to build TLS parameters: {e}"))?;
     let tls_mode = if port == 465 {
@@ -61,7 +61,7 @@ fn build_mailer_from(
         Tls::Required(tls_params)
     };
 
-    Ok(SmtpTransport::builder_dangerous(host.as_str())
+    Ok(SmtpTransport::builder_dangerous(host)
         .port(port)
         .credentials(creds)
         .tls(tls_mode)
@@ -76,7 +76,7 @@ fn build_mailer(
 ) -> Result<(SmtpTransport, String), String> {
     let (host, port, user, password) =
         resolve_smtp(smtp_host, smtp_port, smtp_user, smtp_password)?;
-    let mailer = build_mailer_from(host, port, user.clone(), password)?;
+    let mailer = build_mailer_from(host.as_str(), port, user.clone(), password)?;
     Ok((mailer, user))
 }
 
@@ -87,7 +87,7 @@ async fn test_smtp_connection(
     user: String,
     password: String,
 ) -> Result<String, String> {
-    let mailer = build_mailer_from(host, port, user, password)?;
+    let mailer = build_mailer_from(host.as_str(), port, user, password)?;
     let connected = mailer
         .test_connection()
         .map_err(|e| format!("SMTP connection test failed: {e:?}"))?;
@@ -166,8 +166,7 @@ async fn send_publish_email(
 fn temp_suffix() -> String {
     let nanos = SystemTime::now()
         .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_nanos())
-        .unwrap_or(0);
+        .map_or(0, |d| d.as_nanos());
     format!("{}-{}", std::process::id(), nanos)
 }
 
@@ -507,7 +506,7 @@ mod tests {
         assert_eq!(fs::read_to_string(&dest).unwrap(), "{\"hello\":1}");
         let leftovers: Vec<_> = fs::read_dir(&dir)
             .unwrap()
-            .filter_map(|e| e.ok())
+            .filter_map(Result::ok)
             .filter(|e| e.file_name().to_string_lossy().contains(".tmp-"))
             .collect();
         assert!(leftovers.is_empty(), "temp files must be cleaned up");
