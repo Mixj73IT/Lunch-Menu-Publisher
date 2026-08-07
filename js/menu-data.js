@@ -132,37 +132,46 @@ const MenuData = (function () {
     }
 
     /**
-     * Build the stable menu.json snapshot consumed by other local projects.
+     * Build the stable menu.json snapshot consumed by the lunch spreadsheet
+     * (admin-controller 6 AM sync) and the Kiosk lunch-selection display.
      *
-     * Schema (see MENU_JSON.md):
+     * Schema (V4 contract — see MENU_JSON.md):
      * {
-     *   "schemaVersion": 1,
-     *   "publishedAt":   "2026-09-01T12:34:56.789Z",
-     *   "month":         9,            // 1-based
-     *   "year":          2026,
-     *   "verse":         { text, reference } | null,
-     *   "days": [
-     *     { "date": "2026-09-01", "entree": "...", "sides": [...],
-     *       "specials": "...", "event": "...", "noSchool": false }
+     *   "version":      4,
+     *   "generated":    "2026-09-02T12:00:00.000Z",
+     *   "publishedAt":  "2026-09-02T12:00:00.000Z",
+     *   "month":        9,            // 1-based
+     *   "year":         2026,
+     *   "verse":        { text, reference } | null,
+     *   "menu": [
+     *     { "date": "2026-09-01", "day": "Tuesday", "entree": "...",
+     *       "special": "...", "sides": [...], "event": "...", "noSchool": false }
      *   ]
      * }
      *
      * Every calendar day of the month is included. Weekends and NO SCHOOL days
-     * have noSchool: true and empty entries. Empty strings/arrays are used
-     * consistently — no omitted keys.
+     * have noSchool: true and empty content fields (the noSchool flag is
+     * authoritative and consumers can ignore content). The "menu" array is the
+     * exact shape both consumers parse: MenuSync.gs hard-fails without it, and
+     * the kiosk's getDailyMenu() matches entries by "date". No saladBar or
+     * sackLunch fields are emitted — those are day-of decisions managed in the
+     * lunch spreadsheets, not by this app.
      */
     function buildMenuJson(menu, month, year, publishedAt, versesEnabled) {
-        const days = [];
+        const dayNames = [
+            'Sunday', 'Monday', 'Tuesday', 'Wednesday',
+            'Thursday', 'Friday', 'Saturday'
+        ];
+        const menuDays = [];
         for (let day = 1; day <= daysInMonth(year, month); day++) {
             const noSchool = isNonSchoolDay(menu, year, month, day);
             const d = getDayData(menu, year, month, day);
-            // On non-school days the entry fields are always empty: the
-            // noSchool flag is authoritative and consumers can ignore content.
-            days.push({
+            menuDays.push({
                 date: d.date,
+                day: dayNames[new Date(year, month, day).getDay()],
                 entree: noSchool ? '' : (d.entree || ''),
+                special: noSchool ? '' : (d.special || ''),
                 sides: noSchool ? [] : (d.sides || []),
-                specials: noSchool ? '' : (d.special || ''),
                 event: noSchool ? '' : (d.specialEvent || ''),
                 noSchool: noSchool
             });
@@ -171,13 +180,15 @@ const MenuData = (function () {
         const verse =
             versesEnabled && menu.verse && menu.verse.text ? menu.verse : null;
 
+        const ts = publishedAt || new Date().toISOString();
         return {
-            schemaVersion: 1,
-            publishedAt: publishedAt || new Date().toISOString(),
+            version: 4,
+            generated: ts,
+            publishedAt: ts,
             month: month + 1, // 1-based in the published schema
             year: year,
             verse: verse,
-            days: days
+            menu: menuDays
         };
     }
 

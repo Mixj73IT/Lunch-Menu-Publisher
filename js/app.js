@@ -56,13 +56,6 @@ const App = {
             });
         }
 
-        // Copy from previous month
-        const copyBtn = document.getElementById('copyPrevMonthBtn');
-        if (copyBtn) {
-            copyBtn.addEventListener('click', () => {
-                Calendar.copyFromPreviousMonth();
-            });
-        }
     },
 
     addExitPreviewButton() {

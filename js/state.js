@@ -46,11 +46,6 @@ const GridIds = Object.freeze({
     SPECIAL_EVENT: 'specialGrid'
 });
 
-const MONTH_NAMES = Object.freeze([
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December'
-]);
-
 const DEFAULT_ENTREES = [
     { id: 'entree-1', name: 'Chicken Nuggets', type: TileTypes.ENTREE },
     { id: 'entree-2', name: 'Pizza', type: TileTypes.ENTREE },
@@ -624,18 +619,6 @@ const State = {
         const menu = this.getMenu(month, year);
         menu.verse = verse;
         this.saveMenu(menu);
-    },
-
-    reorderTiles(type, newOrder) {
-        if (type === TileTypes.ENTREE) {
-            const prev = this.entreeTiles;
-            this.entreeTiles = newOrder;
-            this.saveEntreeTiles(prev);
-        } else {
-            const prev = this.sideTiles;
-            this.sideTiles = newOrder;
-            this.saveSideTiles(prev);
-        }
     },
 
     setCurrentMonth(month, year) {

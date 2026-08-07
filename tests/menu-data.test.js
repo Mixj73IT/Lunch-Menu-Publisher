@@ -94,45 +94,80 @@ test('generateTxt returns empty string when nothing to export', () => {
     assert.equal(MenuData.generateTxt(onlyWeekend, MONTH, YEAR), '');
 });
 
-test('buildMenuJson follows the stable schema', () => {
+test('buildMenuJson emits the V4 contract both consumers parse', () => {
     const publishedAt = '2026-09-02T12:00:00.000Z';
     const menu = { ...sampleMenu(), verse: { text: 'Give thanks', reference: '1 Thess 5:18' } };
     const json = MenuData.buildMenuJson(menu, MONTH, YEAR, publishedAt, true);
 
-    assert.equal(json.schemaVersion, 1);
+    assert.equal(json.version, 4);
+    assert.equal(json.generated, publishedAt);
     assert.equal(json.publishedAt, publishedAt);
     assert.equal(json.month, 9, 'month must be 1-based');
     assert.equal(json.year, 2026);
     assert.deepEqual(json.verse, { text: 'Give thanks', reference: '1 Thess 5:18' });
 
-    // Every calendar day of the month is present.
-    assert.equal(json.days.length, 30);
-    assert.equal(json.days[0].date, '2026-09-01');
+    // The "menu" array is the consumer contract: MenuSync.gs hard-fails
+    // without it, and the kiosk matches entries by date.
+    assert.ok(Array.isArray(json.menu), 'menu must be an array');
+    assert.equal(json.menu.length, 30, 'every calendar day of the month is present');
 
-    // Consistent key set on every day - no omitted fields.
-    const expectedKeys = ['date', 'entree', 'sides', 'specials', 'event', 'noSchool'];
-    for (const day of json.days) {
-        assert.deepEqual(Object.keys(day).sort(), expectedKeys.slice().sort(), `day ${day.date}`);
+    // Consistent key set on every entry - no omitted fields.
+    const expectedKeys = ['date', 'day', 'entree', 'special', 'sides', 'event', 'noSchool'];
+    for (const entry of json.menu) {
+        assert.deepEqual(Object.keys(entry).sort(), expectedKeys.slice().sort(), `day ${entry.date}`);
     }
 
     // Weekends and NO SCHOOL days flagged.
-    const byDate = Object.fromEntries(json.days.map(d => [d.date, d]));
+    const byDate = Object.fromEntries(json.menu.map(d => [d.date, d]));
+    assert.equal(byDate['2026-09-01'].day, 'Tuesday');
     assert.equal(byDate['2026-09-05'].noSchool, true, 'Saturday');
     assert.equal(byDate['2026-09-06'].noSchool, true, 'Sunday');
     assert.equal(byDate['2026-09-07'].noSchool, true, 'Labor Day');
     assert.equal(byDate['2026-09-01'].noSchool, false);
 
-    // Content mapping.
+    // Content mapping (special is singular, matching the consumer contract).
     assert.equal(byDate['2026-09-01'].entree, 'Pizza');
     assert.deepEqual(byDate['2026-09-01'].sides, ['Green Beans', 'Roll']);
-    assert.equal(byDate['2026-09-01'].specials, 'Reuben');
+    assert.equal(byDate['2026-09-01'].special, 'Reuben');
     assert.equal(byDate['2026-09-01'].event, 'Bake Sale');
 
     // NO SCHOOL day content is always empty: the noSchool flag is authoritative.
     assert.equal(byDate['2026-09-07'].entree, '');
     assert.deepEqual(byDate['2026-09-07'].sides, []);
-    assert.equal(byDate['2026-09-07'].specials, '');
+    assert.equal(byDate['2026-09-07'].special, '');
     assert.equal(byDate['2026-09-07'].event, '');
+
+    // Date strings are 'yyyy-MM-dd' — the format MenuSync.gs and the kiosk match.
+    assert.match(byDate['2026-09-15'].date, /^\d{4}-\d{2}-\d{2}$/);
+});
+
+test('V4 menu round-trips through the kiosk and MenuSync consumer logic', () => {
+    const json = MenuData.buildMenuJson(sampleMenu(), MONTH, YEAR, '2026-09-02T00:00:00.000Z', true);
+
+    // MenuSync.gs gate: it hard-aborts unless Array.isArray(json.menu).
+    assert.ok(Array.isArray(json.menu));
+
+    // Kiosk getDailyMenu(): finds today's entry by date, maps entree -> mainCourse.
+    const today = '2026-09-01';
+    const entry = json.menu.find(e => e.date === today);
+    assert.ok(entry, 'kiosk must find today by date');
+    const dailyMenu = {
+        mainCourse: typeof entry.entree === 'string' ? entry.entree : "Today's Hot Lunch",
+        special: typeof entry.special === 'string' ? entry.special : ''
+    };
+    assert.equal(dailyMenu.mainCourse, 'Pizza');
+    assert.equal(dailyMenu.special, 'Reuben');
+
+    // MenuSync.gs row fields: date | day | entree | special.
+    assert.equal(entry.date, '2026-09-01');
+    assert.equal(entry.day, 'Tuesday');
+    assert.equal(entry.entree, 'Pizza');
+    assert.equal(entry.special, 'Reuben');
+
+    // saladBar/sackLunch are intentionally absent: the publisher never
+    // references the salad bar (Option A — defaults apply downstream).
+    assert.equal('saladBar' in entry, false);
+    assert.equal('sackLunch' in entry, false);
 });
 
 test('buildMenuJson omits the verse when verses are disabled', () => {

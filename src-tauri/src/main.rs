@@ -4,7 +4,7 @@
 )]
 
 use base64::{engine::general_purpose, Engine as _};
-use dotenv::dotenv;
+use dotenvy::dotenv;
 use lettre::message::{Attachment, Message, MultiPart, SinglePart};
 use lettre::transport::smtp::authentication::Credentials;
 use lettre::transport::smtp::client::{Tls, TlsParameters};
@@ -53,10 +53,10 @@ fn resolve_smtp(
 }
 
 /// Build a transport from already-resolved credentials.
-fn build_mailer_from(host: String, port: u16, user: String, password: String) -> Result<SmtpTransport, String> {
+fn build_mailer_from(host: &str, port: u16, user: String, password: String) -> Result<SmtpTransport, String> {
     let creds = Credentials::new(user, password);
 
-    let tls_params = TlsParameters::builder(host.clone())
+    let tls_params = TlsParameters::builder(host.to_owned())
         .build()
         .map_err(|e| format!("Failed to build TLS parameters: {e}"))?;
 
@@ -70,7 +70,7 @@ fn build_mailer_from(host: String, port: u16, user: String, password: String) ->
 
     // builder_dangerous skips MX lookup: we connect to the exact host the user
     // configured rather than whatever the MX record resolves to.
-    let mailer = SmtpTransport::builder_dangerous(host.as_str())
+    let mailer = SmtpTransport::builder_dangerous(host)
         .port(port)
         .credentials(creds)
         .tls(tls_mode)
@@ -89,7 +89,7 @@ fn build_mailer(
 ) -> Result<(SmtpTransport, String), String> {
     let (host, port, user, password) =
         resolve_smtp(smtp_host, smtp_port, smtp_user, smtp_password)?;
-    let mailer = build_mailer_from(host, port, user.clone(), password)?;
+    let mailer = build_mailer_from(host.as_str(), port, user.clone(), password)?;
     Ok((mailer, user))
 }
 
@@ -101,7 +101,7 @@ async fn test_smtp_connection(
     user: String,
     password: String,
 ) -> Result<String, String> {
-    let mailer = build_mailer_from(host, port, user, password)?;
+    let mailer = build_mailer_from(host.as_str(), port, user, password)?;
 
     // test_connection returns Ok(bool): false means the server rejected the
     // probe (e.g. NOOP/EHLO refused), which is a failed test, not a success.
@@ -117,6 +117,11 @@ async fn test_smtp_connection(
 
 /// Send the Publish Month email: a short body, the menu.txt attachment, and
 /// (only when a real PDF was generated) the menu.pdf attachment.
+///
+/// The flat parameter list mirrors the frontend's invoke payload one-to-one;
+/// grouping into a struct would require a serde derive plus an IPC contract
+/// change on the JS side, so the pedantic `too_many_arguments` lint is allowed.
+#[allow(clippy::too_many_arguments)]
 #[tauri::command(rename_all = "snake_case")]
 async fn send_publish_email(
     recipient: String,
@@ -132,9 +137,9 @@ async fn send_publish_email(
     smtp_password: Option<String>,
 ) -> Result<String, String> {
     let (mailer, email_user) = build_mailer(smtp_host, smtp_port, smtp_user, smtp_password)?;
-    let email_from = email_user.clone();
+    let email_from = email_user;
 
-    let mut multipart = MultiPart::mixed().singlepart(SinglePart::plain(body.clone()));
+    let mut multipart = MultiPart::mixed().singlepart(SinglePart::plain(body));
 
     // The TXT attachment is always present.
     let txt_attachment = Attachment::new(txt_attachment_name).body(
@@ -186,8 +191,7 @@ async fn send_publish_email(
 fn temp_suffix() -> String {
     let nanos = SystemTime::now()
         .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_nanos())
-        .unwrap_or(0);
+        .map_or(0, |d| d.as_nanos());
     format!("{}-{}", std::process::id(), nanos)
 }
 
@@ -387,7 +391,7 @@ mod tests {
         // No temp files left behind.
         let leftovers: Vec<_> = fs::read_dir(&dir)
             .unwrap()
-            .filter_map(|e| e.ok())
+            .filter_map(Result::ok)
             .filter(|e| e.file_name().to_string_lossy().contains(".tmp-"))
             .collect();
         assert!(leftovers.is_empty(), "temp files must be cleaned up");
