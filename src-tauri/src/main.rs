@@ -289,10 +289,13 @@ fn validate_menu_json(contents: &str) -> Result<(), String> {
         .as_object()
         .ok_or_else(|| "menu.json must contain a top-level object.".to_string())?;
 
-    // V4 contract: the "menu" array is what both consumers parse - MenuSync.gs
-    // hard-fails without it, and the kiosk's getDailyMenu() matches by date.
-    if object.get("version").and_then(|v| v.as_u64()) != Some(4) {
-        return Err("menu.json version must be 4.".to_string());
+    // V5 contract: the file always carries TWO consecutive months (the primary
+    // month plus the one after it) so an early publish of the next month never
+    // erases the rest of the current one. The "menu" array is what both
+    // consumers parse - MenuSync.gs hard-fails without it, and the kiosk's
+    // getDailyMenu() matches entries by "date", ignoring the extra month.
+    if object.get("version").and_then(|v| v.as_u64()) != Some(5) {
+        return Err("menu.json version must be 5.".to_string());
     }
     let generated = object
         .get("generated")
@@ -320,6 +323,26 @@ fn validate_menu_json(contents: &str) -> Result<(), String> {
         .filter(|month| (1..=12).contains(month))
         .ok_or_else(|| "menu.json month must be an integer from 1 to 12.".to_string())?;
 
+    // The second month must be present and must immediately follow the primary
+    // month (December rolls over to January of the next year).
+    let next_month = object
+        .get("nextMonth")
+        .and_then(|v| v.as_u64())
+        .filter(|month| (1..=12).contains(month))
+        .ok_or_else(|| "menu.json nextMonth must be an integer from 1 to 12.".to_string())?;
+    let next_year = object
+        .get("nextYear")
+        .and_then(|v| v.as_i64())
+        .filter(|year| (1..=9999).contains(year))
+        .ok_or_else(|| "menu.json nextYear must be an integer from 1 to 9999.".to_string())?;
+    let (expected_next_month, expected_next_year) =
+        if month == 12 { (1, year + 1) } else { (month + 1, year) };
+    if next_month != expected_next_month || next_year != expected_next_year {
+        return Err(
+            "menu.json nextMonth/nextYear must immediately follow month/year.".to_string(),
+        );
+    }
+
     let verse = object
         .get("verse")
         .ok_or_else(|| "menu.json verse must be present.".to_string())?;
@@ -338,15 +361,23 @@ fn validate_menu_json(contents: &str) -> Result<(), String> {
         .get("menu")
         .and_then(|v| v.as_array())
         .ok_or_else(|| "menu.json menu must be an array.".to_string())?;
-    let expected_days = days_in_month(year, month);
+    // Primary month block first, then the following month's block. Each block
+    // must contain exactly every calendar day of its month, in order.
+    let first_days = days_in_month(year, month);
+    let second_days = days_in_month(next_year, next_month);
+    let expected_days = first_days + second_days;
     if menu.len() as u64 != expected_days {
         return Err(format!(
-            "menu.json menu must contain exactly {expected_days} entries."
+            "menu.json menu must contain exactly {expected_days} entries (both months)."
         ));
     }
 
     for (index, entry) in menu.iter().enumerate() {
-        let day_number = index as u64 + 1;
+        let (entry_year, entry_month, day_number) = if (index as u64) < first_days {
+            (year, month, index as u64 + 1)
+        } else {
+            (next_year, next_month, index as u64 + 1 - first_days)
+        };
         let entry = entry
             .as_object()
             .ok_or_else(|| "Each menu.json menu entry must be an object.".to_string())?;
@@ -354,9 +385,9 @@ fn validate_menu_json(contents: &str) -> Result<(), String> {
             .get("date")
             .and_then(|v| v.as_str())
             .ok_or_else(|| "Each menu.json menu entry must contain a date string.".to_string())?;
-        if !valid_iso_date(date, year, month, day_number) {
+        if !valid_iso_date(date, entry_year, entry_month, day_number) {
             return Err(format!(
-                "menu.json menu entry {day_number} has an invalid ISO date."
+                "menu.json menu entry {day_number} of month {entry_month} has an invalid ISO date."
             ));
         }
         if entry.get("day").and_then(|v| v.as_str()).is_none()
@@ -532,53 +563,52 @@ mod tests {
         ));
         assert!(atomic_write_bytes(&dest, b"data").is_err());
     }
+    /// Build a valid V5 payload for `month`/`year` plus the following month,
+    /// with every day empty. Dates use each month's real length.
+    fn v5_payload(year: u64, month: u64) -> String {
+        let mut entries = Vec::new();
+        let mut push_block = |y: u64, m: u64| {
+            let days = days_in_month(y as i64, m);
+            for day in 1..=days {
+                entries.push(format!(
+                    "{{\"date\":\"{y:04}-{m:02}-{day:02}\",\"day\":\"Monday\",\"entree\":\"\",\"special\":\"\",\"sides\":[],\"event\":\"\",\"noSchool\":false}}"
+                ));
+            }
+        };
+        push_block(year, month);
+        let (next_m, next_y) = if month == 12 {
+            (1, year + 1)
+        } else {
+            (month + 1, year)
+        };
+        push_block(next_y, next_m);
+        format!(
+            "{{\"version\":5,\"generated\":\"2026-09-02T12:00:00.000Z\",\"publishedAt\":\"2026-09-02T12:00:00.000Z\",\"month\":{month},\"year\":{year},\"nextMonth\":{next_m},\"nextYear\":{next_y},\"verse\":null,\"menu\":[{}]}}",
+            entries.join(",")
+        )
+    }
+
     #[test]
     fn write_menu_json_round_trip() {
         let dir = temp_dir("cmd");
-        let contents = r#"{
-            "version": 4,
-            "generated": "2026-09-02T12:00:00.000Z",
-            "publishedAt": "2026-09-02T12:00:00.000Z",
-            "month": 9,
-            "year": 2026,
-            "verse": null,
-            "menu": [
-            {"date":"2026-09-01","day":"Tuesday","entree":"","special":"","sides":[],"event":"","noSchool":false},
-            {"date":"2026-09-02","day":"Wednesday","entree":"","special":"","sides":[],"event":"","noSchool":false},
-            {"date":"2026-09-03","day":"Thursday","entree":"","special":"","sides":[],"event":"","noSchool":false},
-            {"date":"2026-09-04","day":"Friday","entree":"","special":"","sides":[],"event":"","noSchool":false},
-            {"date":"2026-09-05","day":"Saturday","entree":"","special":"","sides":[],"event":"","noSchool":false},
-            {"date":"2026-09-06","day":"Sunday","entree":"","special":"","sides":[],"event":"","noSchool":false},
-            {"date":"2026-09-07","day":"Monday","entree":"","special":"","sides":[],"event":"","noSchool":false},
-            {"date":"2026-09-08","day":"Tuesday","entree":"","special":"","sides":[],"event":"","noSchool":false},
-            {"date":"2026-09-09","day":"Wednesday","entree":"","special":"","sides":[],"event":"","noSchool":false},
-            {"date":"2026-09-10","day":"Thursday","entree":"","special":"","sides":[],"event":"","noSchool":false},
-            {"date":"2026-09-11","day":"Friday","entree":"","special":"","sides":[],"event":"","noSchool":false},
-            {"date":"2026-09-12","day":"Saturday","entree":"","special":"","sides":[],"event":"","noSchool":false},
-            {"date":"2026-09-13","day":"Sunday","entree":"","special":"","sides":[],"event":"","noSchool":false},
-            {"date":"2026-09-14","day":"Monday","entree":"","special":"","sides":[],"event":"","noSchool":false},
-            {"date":"2026-09-15","day":"Tuesday","entree":"","special":"","sides":[],"event":"","noSchool":false},
-            {"date":"2026-09-16","day":"Wednesday","entree":"","special":"","sides":[],"event":"","noSchool":false},
-            {"date":"2026-09-17","day":"Thursday","entree":"","special":"","sides":[],"event":"","noSchool":false},
-            {"date":"2026-09-18","day":"Friday","entree":"","special":"","sides":[],"event":"","noSchool":false},
-            {"date":"2026-09-19","day":"Saturday","entree":"","special":"","sides":[],"event":"","noSchool":false},
-            {"date":"2026-09-20","day":"Sunday","entree":"","special":"","sides":[],"event":"","noSchool":false},
-            {"date":"2026-09-21","day":"Monday","entree":"","special":"","sides":[],"event":"","noSchool":false},
-            {"date":"2026-09-22","day":"Tuesday","entree":"","special":"","sides":[],"event":"","noSchool":false},
-            {"date":"2026-09-23","day":"Wednesday","entree":"","special":"","sides":[],"event":"","noSchool":false},
-            {"date":"2026-09-24","day":"Thursday","entree":"","special":"","sides":[],"event":"","noSchool":false},
-            {"date":"2026-09-25","day":"Friday","entree":"","special":"","sides":[],"event":"","noSchool":false},
-            {"date":"2026-09-26","day":"Saturday","entree":"","special":"","sides":[],"event":"","noSchool":false},
-            {"date":"2026-09-27","day":"Sunday","entree":"","special":"","sides":[],"event":"","noSchool":false},
-            {"date":"2026-09-28","day":"Monday","entree":"","special":"","sides":[],"event":"","noSchool":false},
-            {"date":"2026-09-29","day":"Tuesday","entree":"","special":"","sides":[],"event":"","noSchool":false},
-            {"date":"2026-09-30","day":"Wednesday","entree":"","special":"","sides":[],"event":"","noSchool":false}
-            ]
-        }"#;
+        // September 2026 (30 days) + October 2026 (31 days) = 61 entries.
+        let contents = v5_payload(2026, 9);
         let path =
-            write_menu_json_to_dir(&dir.to_string_lossy(), contents).expect("should succeed");
+            write_menu_json_to_dir(&dir.to_string_lossy(), &contents).expect("should succeed");
         assert!(path.ends_with("menu.json"));
         assert_eq!(fs::read_to_string(&path).unwrap(), contents);
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn menu_json_validation_accepts_december_rollover() {
+        let dir = temp_dir("rollover");
+        // December 2026 (31) + January 2027 (31) = 62 entries, and the
+        // consecutive-month rule must accept the year boundary.
+        let contents = v5_payload(2026, 12);
+        let path =
+            write_menu_json_to_dir(&dir.to_string_lossy(), &contents).expect("should succeed");
+        assert!(path.ends_with("menu.json"));
         let _ = fs::remove_dir_all(&dir);
     }
 
@@ -587,7 +617,7 @@ mod tests {
         assert!(write_menu_json_to_dir("", "{}").is_err());
         let dir = temp_dir("invalid-json");
         assert!(write_menu_json_to_dir(&dir.to_string_lossy(), "not json").is_err());
-        assert!(write_menu_json_to_dir(&dir.to_string_lossy(), "{\"version\":4}").is_err());
+        assert!(write_menu_json_to_dir(&dir.to_string_lossy(), "{\"version\":5}").is_err());
         assert!(!dir.join("menu.json").exists());
         let _ = fs::remove_dir_all(&dir);
     }
@@ -600,16 +630,26 @@ mod tests {
         assert!(!valid_iso_date("2026-09-31", 2026, 9, 30));
 
         let dir = temp_dir("invalid-shape");
-        let base = r#"{
-            "version": 4,
-            "generated": "2026-09-02T12:00:00.000Z",
-            "publishedAt": "2026-09-02T12:00:00.000Z",
-            "month": 9,
-            "year": 2026,
-            "verse": {"text": "only text"},
-            "menu": []
-        }"#;
-        assert!(write_menu_json_to_dir(&dir.to_string_lossy(), base).is_err());
+
+        // A verse missing its reference must fail before the menu checks.
+        let mut base: serde_json::Value = serde_json::from_str(&v5_payload(2026, 9)).unwrap();
+        let obj = base.as_object_mut().unwrap();
+        obj.insert("verse".into(), serde_json::json!({ "text": "only text" }));
+        obj.insert("menu".into(), serde_json::Value::Array(vec![]));
+        assert!(write_menu_json_to_dir(&dir.to_string_lossy(), &base.to_string()).is_err());
+
+        // The second month must immediately follow the primary month.
+        let mut non_consecutive: serde_json::Value =
+            serde_json::from_str(&v5_payload(2026, 9)).unwrap();
+        let obj = non_consecutive.as_object_mut().unwrap();
+        obj.insert("nextMonth".into(), serde_json::json!(11));
+        let err = write_menu_json_to_dir(&dir.to_string_lossy(), &non_consecutive.to_string())
+            .unwrap_err();
+        assert!(
+            err.contains("must immediately follow"),
+            "unexpected error: {err}"
+        );
+        assert!(!dir.join("menu.json").exists());
         let _ = fs::remove_dir_all(&dir);
     }
 
@@ -617,48 +657,24 @@ mod tests {
     fn menu_json_validation_rejects_wrong_day_count() {
         let dir = temp_dir("wrong-count");
 
-        // A valid V4 payload with only 29 of September's 30 days: the
-        // validator must reject it via the exactly-days_in_month rule.
-        let days = [
-            ("01", "Tuesday"), ("02", "Wednesday"), ("03", "Thursday"),
-            ("04", "Friday"), ("05", "Saturday"), ("06", "Sunday"),
-            ("07", "Monday"), ("08", "Tuesday"), ("09", "Wednesday"),
-            ("10", "Thursday"), ("11", "Friday"), ("12", "Saturday"),
-            ("13", "Sunday"), ("14", "Monday"), ("15", "Tuesday"),
-            ("16", "Wednesday"), ("17", "Thursday"), ("18", "Friday"),
-            ("19", "Saturday"), ("20", "Sunday"), ("21", "Monday"),
-            ("22", "Tuesday"), ("23", "Wednesday"), ("24", "Thursday"),
-            ("25", "Friday"), ("26", "Saturday"), ("27", "Sunday"),
-            ("28", "Monday"), ("29", "Tuesday"),
-        ];
-        let mut payload = String::from(
-            "{
-  \"version\": 4,
-  \"generated\": \"2026-09-02T12:00:00.000Z\",
-  \"publishedAt\": \"2026-09-02T12:00:00.000Z\",
-  \"month\": 9,
-  \"year\": 2026,
-  \"verse\": null,
-  \"menu\": [
-"
-        );
-        for (i, (day, name)) in days.iter().enumerate() {
-            if i > 0 {
-                payload.push_str(",
-");
-            }
-            payload.push_str("            {\"date\":\"2026-09-");
-            payload.push_str(day);
-            payload.push_str("\",\"day\":\"");
-            payload.push_str(name);
-            payload.push_str("\",\"entree\":\"\",\"special\":\"\",\"sides\":[],\"event\":\"\",\"noSchool\":false}");
-        }
-        payload.push_str("
-  ]
-}");
+        // A valid V5 payload with one of the 61 entries removed: the validator
+        // must reject it via the exact two-month day-count rule.
+        let mut value: serde_json::Value = serde_json::from_str(&v5_payload(2026, 9)).unwrap();
+        let menu = value
+            .as_object_mut()
+            .unwrap()
+            .get_mut("menu")
+            .unwrap()
+            .as_array_mut()
+            .unwrap();
+        menu.pop();
+        let payload = value.to_string();
 
         let err = write_menu_json_to_dir(&dir.to_string_lossy(), &payload).unwrap_err();
-        assert!(err.contains("must contain exactly 30 entries"), "unexpected error: {err}");
+        assert!(
+            err.contains("must contain exactly 61 entries"),
+            "unexpected error: {err}"
+        );
         assert!(!dir.join("menu.json").exists());
         let _ = fs::remove_dir_all(&dir);
     }

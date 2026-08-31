@@ -163,6 +163,98 @@ test('buildMenuJson omits the verse when verses are disabled', () => {
     assert.equal(MenuData.buildMenuJson(menu, MONTH, YEAR, '2026-09-02T00:00:00.000Z', false).verse, null);
 });
 
+/** Menu builder for an arbitrary (0-based month, year) pair. */
+function menuFor(month, year) {
+    const days = {};
+    return {
+        set(day, data) { days[MenuData.dateKey(year, month, day)] = data; },
+        menu() { return { month, year, days, verse: null }; }
+    };
+}
+
+test('buildMenuJson emits V5 with two consecutive months', () => {
+    const aug = menuFor(7, 2026);
+    aug.set(3, { entree: 'Pizza', sides: ['Corn'] }); // Aug 3 = Monday
+    const sep = menuFor(8, 2026);
+    sep.set(1, { entree: 'Tacos' });
+
+    const json = MenuData.buildMenuJson(
+        aug.menu(), 7, 2026, '2026-08-25T12:00:00.000Z', true,
+        sep.menu(), 8, 2026
+    );
+
+    assert.equal(json.version, 5);
+    assert.equal(json.month, 8, 'primary month is 1-based');
+    assert.equal(json.year, 2026);
+    assert.equal(json.nextMonth, 9, 'next month is 1-based');
+    assert.equal(json.nextYear, 2026);
+    assert.equal(json.menu.length, 31 + 30, 'every day of both months present');
+    assert.equal(json.menu[0].date, '2026-08-01');
+    assert.equal(json.menu[30].date, '2026-08-31', 'primary month block ends at its last day');
+    assert.equal(json.menu[31].date, '2026-09-01', 'second month block follows');
+    assert.equal(json.menu[60].date, '2026-09-30');
+
+    // Each month's data lands in its own block.
+    assert.equal(json.menu[2].entree, 'Pizza'); // 2026-08-03
+    assert.equal(json.menu[31].entree, 'Tacos');
+
+    // Consumers still find today by date across the combined array.
+    const entry = json.menu.find(e => e.date === '2026-08-20');
+    assert.ok(entry, 'date lookup works across both months');
+});
+
+test('V5 keeps the rest of the current month when publishing the next one early', () => {
+    // On August 25 the manager publishes September. The file must still carry
+    // August (published days AND the rest of the month) plus September.
+    const aug = menuFor(7, 2026);
+    aug.set(25, { entree: 'Pizza', sides: ['Corn'] });
+    aug.set(31, { entree: 'Hot Dog' });
+    const sep = menuFor(8, 2026);
+    sep.set(1, { entree: 'Tacos' });
+
+    const json = MenuData.buildMenuJson(
+        aug.menu(), 7, 2026, '2026-08-25T12:00:00.000Z', true,
+        sep.menu(), 8, 2026
+    );
+
+    const byDate = Object.fromEntries(json.menu.map(d => [d.date, d]));
+    assert.equal(byDate['2026-08-25'].entree, 'Pizza', 'already-published days survive');
+    assert.equal(byDate['2026-08-31'].entree, 'Hot Dog', 'the rest of the month survives');
+    assert.equal(byDate['2026-09-01'].entree, 'Tacos', 'the newly published month is present');
+    assert.ok(json.menu.length >= 61);
+});
+
+test('buildPublishPlan writes a two-month V5 menu.json when jsonMonths is configured', () => {
+    const aug = menuFor(7, 2026);
+    aug.set(25, { entree: 'Pizza' });
+    const sep = menuFor(8, 2026);
+    sep.set(1, { entree: 'Tacos' });
+
+    // The user is publishing September while the real current month is August.
+    const plan = MenuData.buildPublishPlan(sep.menu(), 8, 2026, { versesEnabled: true }, {
+        menuJsonFolder: 'C:/Drive/Menus',
+        staffEmail: '',
+        smtpComplete: false,
+        browserMode: false,
+        jsonMonths: {
+            anchor: { month: 7, year: 2026, menu: aug.menu() },
+            next: { month: 8, year: 2026, menu: sep.menu() }
+        }
+    });
+
+    assert.equal(plan.json.version, 5);
+    assert.equal(plan.json.month, 8, 'primary month is the real current month (August)');
+    assert.equal(plan.json.nextMonth, 9);
+    assert.equal(plan.json.menu.length, 61);
+    assert.ok(
+        plan.jsonDeliveryLabel.includes('August 2026 + September 2026'),
+        plan.jsonDeliveryLabel
+    );
+    // The published month's own outputs stay single-month.
+    assert.equal(plan.monthLabel, 'September 2026');
+    assert.equal(plan.fileName, 'Lunch Menu - September 2026');
+});
+
 test('buildPublishPlan blocks publishing without a menu.json destination (desktop)', () => {
     const plan = MenuData.buildPublishPlan(sampleMenu(), MONTH, YEAR, { versesEnabled: true }, {
         menuJsonFolder: '', staffEmail: '', smtpComplete: false, browserMode: false

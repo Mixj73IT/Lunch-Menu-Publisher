@@ -19,7 +19,9 @@ Each month you:
 
 - `Lunch Menu - September 2026.pdf` — a print-ready PDF in your Downloads folder
 - `Lunch Menu - September 2026.txt` — a plain-text file for FACTS / RenWeb import, also in Downloads
-- `menu.json` — a machine-readable file written to your Google Drive-synced folder
+- `menu.json` — a machine-readable file written to your Google Drive-synced folder.
+  It always covers **two months — the current month and the next one** — so
+  publishing next month early never erases the rest of the current month.
 - An email to the staff office with the TXT (and PDF) attached
 
 You never need to remember a sequence of Preview, Print, Text Export, Email,
@@ -83,7 +85,9 @@ printed design first.
 5. A **✓ Published** badge appears next to the month name after a complete publish.
 
 Re-publishing a month simply overwrites the previous PDF, TXT, and `menu.json`
-— no history or archives are kept.
+— no history or archives are kept. `menu.json` always carries the current
+month and the next month together, so the rest of the current month survives
+when the next month is published early.
 
 ## 5. Troubleshooting
 

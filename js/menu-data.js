@@ -133,53 +133,77 @@ const MenuData = (function () {
      * Build the stable menu.json snapshot consumed by the lunch spreadsheet
      * (admin-controller 6 AM sync) and the Kiosk lunch-selection display.
      *
-     * Schema (V4 contract — see MENU_JSON.md):
+     * Schema (V5 contract — see MENU_JSON.md):
      * {
-     *   "version":      4,
+     *   "version":      5,
      *   "generated":    "2026-09-02T12:00:00.000Z",
      *   "publishedAt":  "2026-09-02T12:00:00.000Z",
-     *   "month":        9,            // 1-based
+     *   "month":        9,            // 1-based, primary month
      *   "year":         2026,
+     *   "nextMonth":    10,           // 1-based, month following the primary
+     *   "nextYear":     2026,
      *   "verse":        { text, reference } | null,
      *   "menu": [
      *     { "date": "2026-09-01", "day": "Tuesday", "entree": "...",
-     *       "special": "...", "sides": [...], "event": "...", "noSchool": false }
+     *       "special": "...", "sides": [...], "event": "...", "noSchool": false },
+     *     ... every day of BOTH months, primary month first ...
      *   ]
      * }
      *
-     * Every calendar day of the month is included. Weekends and NO SCHOOL days
-     * have noSchool: true and empty content fields (the noSchool flag is
+     * The file always carries two consecutive months: the primary month and the
+     * month after it. Both consumers look up entries by "date", so the extra
+     * month's entries are simply ignored until their dates arrive. Keeping the
+     * current month in the file is what protects the rest of the month when a
+     * user publishes the NEXT month early (otherwise that publish would erase
+     * the current month's remaining days).
+     *
+     * Every calendar day of both months is included. Weekends and NO SCHOOL
+     * days have noSchool: true and empty content fields (the noSchool flag is
      * authoritative and consumers can ignore content). The "menu" array is the
      * exact shape both consumers parse: MenuSync.gs hard-fails without it, and
      * the kiosk's getDailyMenu() matches entries by "date". No saladBar or
      * sackLunch fields are emitted — those are day-of decisions managed in the
      * lunch spreadsheets, not by this app.
+     *
+     * When `nextMenu` is omitted the legacy single-month V4 payload is emitted
+     * (kept for tests and callers that build the file without the second month;
+     * the Rust backend accepts only V5 at write time).
      */
-    function buildMenuJson(menu, month, year, publishedAt, versesEnabled) {
+    function buildMenuJson(menu, month, year, publishedAt, versesEnabled, nextMenu, nextMonth, nextYear) {
         const dayNames = [
             'Sunday', 'Monday', 'Tuesday', 'Wednesday',
             'Thursday', 'Friday', 'Saturday'
         ];
-        const menuDays = [];
-        for (let day = 1; day <= daysInMonth(year, month); day++) {
-            const noSchool = isNonSchoolDay(menu, year, month, day);
-            const d = getDayData(menu, year, month, day);
-            menuDays.push({
-                date: d.date,
-                day: dayNames[new Date(year, month, day).getDay()],
-                entree: noSchool ? '' : (d.entree || ''),
-                special: noSchool ? '' : (d.special || ''),
-                sides: noSchool ? [] : (d.sides || []),
-                event: noSchool ? '' : (d.specialEvent || ''),
-                noSchool: noSchool
-            });
+
+        // One full month block of day entries (every calendar day).
+        const buildBlock = (blockMenu, m, y) => {
+            const block = [];
+            for (let day = 1; day <= daysInMonth(y, m); day++) {
+                const noSchool = isNonSchoolDay(blockMenu, y, m, day);
+                const d = getDayData(blockMenu, y, m, day);
+                block.push({
+                    date: d.date,
+                    day: dayNames[new Date(y, m, day).getDay()],
+                    entree: noSchool ? '' : (d.entree || ''),
+                    special: noSchool ? '' : (d.special || ''),
+                    sides: noSchool ? [] : (d.sides || []),
+                    event: noSchool ? '' : (d.specialEvent || ''),
+                    noSchool: noSchool
+                });
+            }
+            return block;
+        };
+
+        const menuDays = buildBlock(menu, month, year);
+        if (nextMenu) {
+            menuDays.push(...buildBlock(nextMenu, nextMonth, nextYear));
         }
 
         const verse =
             versesEnabled && menu.verse && menu.verse.text ? menu.verse : null;
 
         const ts = publishedAt || new Date().toISOString();
-        return {
+        const json = {
             version: 4,
             generated: ts,
             publishedAt: ts,
@@ -188,6 +212,12 @@ const MenuData = (function () {
             verse: verse,
             menu: menuDays
         };
+        if (nextMenu) {
+            json.version = 5;
+            json.nextMonth = nextMonth + 1; // 1-based
+            json.nextYear = nextYear;
+        }
+        return json;
     }
 
     /** Human-friendly base file name, e.g. "Lunch Menu - September 2026". */
@@ -203,7 +233,20 @@ const MenuData = (function () {
         const cfg = config || {};
         const browserMode = !!cfg.browserMode;
         const txt = generateTxt(menu, month, year);
-        const json = buildMenuJson(menu, month, year, new Date().toISOString(), settings.versesEnabled);
+
+        // menu.json covers the real current month + the following month so an
+        // early publish of the next month never erases the rest of this one.
+        // cfg.jsonMonths carries both months' menus; without it the legacy
+        // single-month (V4) payload is built.
+        const jm = cfg.jsonMonths;
+        const twoMonth = !!(jm && jm.anchor && jm.next);
+        const json = twoMonth
+            ? buildMenuJson(
+                jm.anchor.menu, jm.anchor.month, jm.anchor.year,
+                new Date().toISOString(), settings.versesEnabled,
+                jm.next.menu, jm.next.month, jm.next.year
+            )
+            : buildMenuJson(menu, month, year, new Date().toISOString(), settings.versesEnabled);
 
         const missingEntreeCount = countDaysMissingEntree(menu, month, year);
         const hasContent = txt.trim().length > 0;
@@ -236,6 +279,11 @@ const MenuData = (function () {
 
         const canPublish = browserMode ? true : jsonConfigured;
 
+        // Human-readable month coverage for the confirmation dialog.
+        const jsonCoverage = twoMonth
+            ? `${MONTH_NAMES[jm.anchor.month]} ${jm.anchor.year} + ${MONTH_NAMES[jm.next.month]} ${jm.next.year}`
+            : MONTH_NAMES[month] + ' ' + year;
+
         return {
             month,
             year,
@@ -252,9 +300,9 @@ const MenuData = (function () {
             warnings,
             canPublish,
             jsonDeliveryLabel: browserMode
-                ? 'menu.json will be downloaded (sync-folder writing requires the desktop app)'
+                ? `menu.json (${jsonCoverage}) will be downloaded (sync-folder writing requires the desktop app)`
                 : (jsonConfigured
-                    ? `menu.json will be written to ${cfg.menuJsonFolder}`
+                    ? `menu.json (${jsonCoverage}) will be written to ${cfg.menuJsonFolder}`
                     : 'menu.json will NOT be written — no destination folder configured'),
             emailDeliveryLabel: emailConfigured
                 ? `Email will be sent to ${cfg.staffEmail}`

@@ -85,11 +85,34 @@ const Publish = (function () {
         const smtpComplete = !!(
             State.smtpHost && State.smtpUser && State.smtpPassword
         );
+
+        // menu.json always covers the REAL current month + the following month,
+        // regardless of which month the user is publishing. Anchoring to the
+        // current date is what keeps the rest of the current month in the file
+        // when the next month is published early.
+        const now = new Date();
+        const anchorMonth = now.getMonth();
+        const anchorYear = now.getFullYear();
+        const nextMonth = anchorMonth === 11 ? 0 : anchorMonth + 1;
+        const nextYear = anchorMonth === 11 ? anchorYear + 1 : anchorYear;
+
         return {
             menuJsonFolder: State.menuJsonFolder,
             staffEmail: State.staffEmail,
             smtpComplete,
-            browserMode: !isTauri()
+            browserMode: !isTauri(),
+            jsonMonths: {
+                anchor: {
+                    month: anchorMonth,
+                    year: anchorYear,
+                    menu: State.getMenu(anchorMonth, anchorYear)
+                },
+                next: {
+                    month: nextMonth,
+                    year: nextYear,
+                    menu: State.getMenu(nextMonth, nextYear)
+                }
+            }
         };
     }
 
