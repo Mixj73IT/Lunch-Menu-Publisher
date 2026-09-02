@@ -33,6 +33,9 @@ nul
 kjv.json
 kjv-cleaned.json
 
+# Freebuff workspace storage
+.freebuff/
+
 # Build output
 dist/
 
