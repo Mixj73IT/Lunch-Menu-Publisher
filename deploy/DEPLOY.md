@@ -62,6 +62,7 @@ The scripts in `deploy/` run remotely in this order:
 | `remote-install-trigger.ps1` (as `incoming-trigger.ps1`) | buffy-fix | Copies run.ps1 into place, `schtasks /run /tn BuffyFixRunner`, polls the result |
 | `remote-verify.ps1` | buffy-fix | Data folders present, PDF bundles inside the installed exe, version |
 | `remote-smoke.ps1` | buffy-fix | Launch the app, confirm it survives 12 s, close it |
+| `remote-smtp-diagnose.ps1` | buffy-fix | DNS + TCP probes to common SMTP endpoints; run when staff email fails with a `Connection`/10060 error |
 
 ```
 scp -i .freebuff/ssh/lunchfix_ed25519 "src-tauri/target/release/bundle/msi/Lunch Menu Publisher_1.0.1_x64_en-US.msi" 'buffy-fix@<TARGET>:C:/ProgramData/buffy-ssh/LunchMenuFix.msi'
@@ -73,6 +74,18 @@ ssh -i .freebuff/ssh/lunchfix_ed25519 buffy-fix@<TARGET> powershell -NoProfile -
 Prefer shipping remote scripts as files (scp + `-File`) over inline
 `powershell -Command` quoting — inline escaping through cmd.exe is what broke
 several one-liners during the incident.
+
+### Staff email fails with "Connection / 10060 TimedOut"
+
+That is a TCP-level failure: the machine cannot reach the configured SMTP
+host at all — it is NOT a wrong password. Run `remote-smtp-diagnose.ps1` on
+the target. In the 2026-09 incident the app had been configured with
+`smtp.google.com` (Google's restricted Workspace relay), which is
+unreachable from that network on 587/465; `smtp.gmail.com` (the standard
+authenticated endpoint) connects fine. Fix: in the app, Settings → SMTP
+host → `smtp.gmail.com`, port 465 (implicit TLS) or 587 (STARTTLS), then
+"Send Test Email". An app-specific password is required, not the account
+password.
 
 ## 4. Verify, then remove access
 
