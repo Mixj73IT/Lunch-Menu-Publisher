@@ -26,6 +26,7 @@ const StorageKeys = {
     SMTP_USER: 'lunchMenu_smtpUser',
     SMTP_PASSWORD: 'lunchMenu_smtpPassword',
     SMTP_FROM: 'lunchMenu_smtpFrom',
+    SMTP_MODE: 'lunchMenu_smtpMode',
     MENU_JSON_FOLDER: 'lunchMenu_menuJsonFolder',
     LAST_PUBLISHED: 'lunchMenu_lastPublished',
     // Legacy keys, kept only for one-time migration to STAFF_EMAIL.
@@ -131,6 +132,10 @@ const State = {
         this.smtpUser = this.load(StorageKeys.SMTP_USER) || '';
         this.smtpPassword = this.load(StorageKeys.SMTP_PASSWORD) || '';
         this.smtpFrom = this.load(StorageKeys.SMTP_FROM) || '';
+        // SMTP mode: 'relay' (no credentials) or 'auth' (username+password).
+        // Derived for existing installs: stored user/pass present -> auth.
+        const savedMode = this.load(StorageKeys.SMTP_MODE);
+        this.smtpMode = savedMode || (this.smtpUser || this.smtpPassword ? 'auth' : 'relay');
         this.menuJsonFolder = this.load(StorageKeys.MENU_JSON_FOLDER) || '';
         this.lastPublished = this.load(StorageKeys.LAST_PUBLISHED) || {};
 
@@ -384,9 +389,32 @@ const State = {
         }
     },
 
-    /** Relay mode is live: both credentials blank -> unauthenticated send. */
+    /** Relay mode when the user picked it; credential fields are then hidden. */
     smtpIsRelayMode() {
-        return !this.smtpUser && !this.smtpPassword;
+        return this.smtpMode === 'relay';
+    },
+
+    saveSmtpMode(prev) {
+        if (!this.save(StorageKeys.SMTP_MODE, this.smtpMode) && prev !== undefined) {
+            this.smtpMode = prev;
+        }
+    },
+
+    /**
+     * Switching to relay mode clears any stored credentials; switching to
+     * auth mode keeps whatever is in the boxes.
+     */
+    setSmtpMode(mode) {
+        if (mode !== 'relay' && mode !== 'auth') return;
+        const prev = this.smtpMode;
+        this.smtpMode = mode;
+        this.saveSmtpMode(prev);
+        if (mode === 'relay') {
+            this.smtpUser = '';
+            this.smtpPassword = '';
+            this.saveSmtpUser();
+            this.saveSmtpPassword();
+        }
     },
 
     /**
@@ -396,7 +424,9 @@ const State = {
      */
     smtpReady() {
         if (!this.smtpHost) return false;
-        if (this.smtpIsRelayMode()) return !!this.smtpFrom;
+        if (this.smtpIsRelayMode()) {
+            return !!this.smtpFrom;
+        }
         return !!(this.smtpUser && this.smtpPassword);
     },
 

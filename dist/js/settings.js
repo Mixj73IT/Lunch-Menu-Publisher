@@ -128,6 +128,28 @@ const Settings = {
             this.updateStatuses();
         });
 
+        // Mode radios: hide/show credential rows entirely.
+        const modeRelay = $('smtpModeRelay');
+        const modeAuth = $('smtpModeAuth');
+        const onModeChange = (e) => {
+            if (!e.target.checked) return;
+            State.setSmtpMode(e.target.value);
+            this.updateSmtpModeVisibility();
+            this.updateStatuses();
+            State.showSaved();
+        };
+        if (modeRelay) modeRelay.addEventListener('change', onModeChange);
+        if (modeAuth) modeAuth.addEventListener('change', onModeChange);
+
+        /** Show/hide the user+password rows based on the chosen mode. */
+        Settings.updateSmtpModeVisibility = function () {
+            const relay = State.smtpIsRelayMode();
+            const userRow = document.getElementById('smtpUserRow');
+            const passRow = document.getElementById('smtpPasswordRow');
+            if (userRow) userRow.style.display = relay ? 'none' : '';
+            if (passRow) passRow.style.display = relay ? 'none' : '';
+        };
+
         /**
          * Sync every SMTP field from the live inputs into State + storage.
          * 'change' only fires on blur, so a just-typed value would otherwise
@@ -147,15 +169,23 @@ const Settings = {
                 State.smtpPort = Number.isFinite(parsed) && parsed > 0 ? parsed : 587;
                 if (State.smtpPort !== prevPort) State.saveSmtpPort(prevPort);
             }
-            if (smtpUser) {
-                const prevUser = State.smtpUser;
-                State.smtpUser = smtpUser.value.trim();
-                if (State.smtpUser !== prevUser) State.saveSmtpUser(prevUser);
-            }
-            if (smtpPassword) {
-                const prevPass = State.smtpPassword;
-                State.smtpPassword = smtpPassword.value;
-                if (State.smtpPassword !== prevPass) State.saveSmtpPassword(prevPass);
+            if (State.smtpIsRelayMode()) {
+                // Relay mode: credentials are not just hidden but empty.
+                State.smtpUser = '';
+                State.smtpPassword = '';
+                State.saveSmtpUser();
+                State.saveSmtpPassword();
+            } else {
+                if (smtpUser) {
+                    const prevUser = State.smtpUser;
+                    State.smtpUser = smtpUser.value.trim();
+                    if (State.smtpUser !== prevUser) State.saveSmtpUser(prevUser);
+                }
+                if (smtpPassword) {
+                    const prevPass = State.smtpPassword;
+                    State.smtpPassword = smtpPassword.value;
+                    if (State.smtpPassword !== prevPass) State.saveSmtpPassword(prevPass);
+                }
             }
             if (smtpFrom) {
                 const prevFrom = State.smtpFrom;
@@ -169,6 +199,12 @@ const Settings = {
             }
             this.updateStatuses();
         };
+
+        const saveSettingsBtn = $('saveSettingsBtn');
+        if (saveSettingsBtn) saveSettingsBtn.addEventListener('click', () => {
+            syncSmtpFieldsFromInputs();
+            State.showSaved();
+        });
 
         const testConnectionBtn = $('testConnectionBtn');
         if (testConnectionBtn) testConnectionBtn.addEventListener('click', async () => {
@@ -222,8 +258,8 @@ const Settings = {
             }
             if (State.smtpHost && State.smtpReady()) {
                 const mode = State.smtpIsRelayMode()
-                    ? `SMTP relay (no auth, from ${State.smtpFrom})`
-                    : 'SMTP configured';
+                    ? `Mail relay — no sign-in (from ${State.smtpFrom})`
+                    : 'Username & password';
                 parts.push(mode);
                 emailStatus.className = 'setting-status ok';
                 emailStatus.textContent = `✓ ${parts.join(' · ')}`;
@@ -291,7 +327,12 @@ const Settings = {
         if (smtpPassword) smtpPassword.value = State.smtpPassword;
         const smtpFrom = $('smtpFromInput');
         if (smtpFrom) smtpFrom.value = State.smtpFrom;
+        const modeRelay = $('smtpModeRelay');
+        if (modeRelay) modeRelay.checked = State.smtpIsRelayMode();
+        const modeAuth = $('smtpModeAuth');
+        if (modeAuth) modeAuth.checked = !State.smtpIsRelayMode();
 
+        this.updateSmtpModeVisibility();
         this.updateStatuses();
 
         // Focus trap setup

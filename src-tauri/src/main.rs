@@ -132,6 +132,7 @@ async fn test_smtp_connection(
     user: String,
     password: String,
 ) -> Result<String, String> {
+    let relay = user.trim().is_empty() && password.trim().is_empty();
     let mailer = build_mailer_from(host.as_str(), port, user, password)?;
     let connected = mailer
         .test_connection()
@@ -139,7 +140,11 @@ async fn test_smtp_connection(
     if !connected {
         return Err("SMTP server did not accept the test connection.".to_string());
     }
-    Ok("SMTP connection successful!".to_string())
+    if relay {
+        Ok("SMTP connection successful (relay mode, no authentication)!".to_string())
+    } else {
+        Ok("SMTP connection successful!".to_string())
+    }
 }
 
 /// Send the Publish Month email: a short body, the menu.txt attachment, and

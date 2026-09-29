@@ -28,42 +28,37 @@ function fakeStorage() {
     };
 }
 
-/** Evaluate state.js, return the real State object. */
-function loadState() {
-    const sandbox = {
-        window: {},
-        localStorage: fakeStorage(),
-        console,
-        TextEncoder,
-        TextDecoder
-    };
+/** Evaluate state.js, return the real State object (after loadAll()). */
+function loadState(storageOverrides) {
+    const storage = fakeStorage();
+    if (storageOverrides) {
+        for (const [k, v] of Object.entries(storageOverrides)) {
+            storage.setItem(k, JSON.stringify(v));
+        }
+    }
+    const sandbox = { window: {}, localStorage: storage, console };
     vm.createContext(sandbox);
-    // The trailing expression statement makes the completion value the
-    // State object (top-level `const` alone would not).
-    return vm.runInContext(STATE_SOURCE + '\n;State;', sandbox, {
+    const State = vm.runInContext(STATE_SOURCE + '\n;State;', sandbox, {
         filename: 'state.js'
     });
+    State.loadAll();
+    return State;
 }
 
-test('relay mode: both credentials blank means relay mode is on', () => {
+test('mode defaults to relay on a fresh install', () => {
     const State = loadState();
-    State.smtpUser = '';
-    State.smtpPassword = '';
     assert.equal(State.smtpIsRelayMode(), true);
 });
 
-test('relay mode: any credential present means relay mode is off', () => {
+test('auth mode: smtpIsRelayMode is false after switching', () => {
     const State = loadState();
-    State.smtpUser = 'kitchen@school.org';
-    State.smtpPassword = '';
+    State.setSmtpMode('auth');
     assert.equal(State.smtpIsRelayMode(), false);
 });
 
 test('relay mode: ready with host + from, no credentials', () => {
     const State = loadState();
     State.smtpHost = 'smtp-relay.gmail.com';
-    State.smtpUser = '';
-    State.smtpPassword = '';
     State.smtpFrom = 'lunchmenu@school.org';
     assert.equal(State.smtpReady(), true);
 });
@@ -71,14 +66,13 @@ test('relay mode: ready with host + from, no credentials', () => {
 test('relay mode: not ready without a From address', () => {
     const State = loadState();
     State.smtpHost = 'smtp-relay.gmail.com';
-    State.smtpUser = '';
-    State.smtpPassword = '';
     State.smtpFrom = '';
     assert.equal(State.smtpReady(), false);
 });
 
 test('authenticated mode: ready with host + user + password even without From', () => {
     const State = loadState();
+    State.setSmtpMode('auth');
     State.smtpHost = 'smtp.gmail.com';
     State.smtpUser = 'kitchen@school.org';
     State.smtpPassword = 'app-password';
@@ -88,6 +82,7 @@ test('authenticated mode: ready with host + user + password even without From', 
 
 test('authenticated mode: missing password blocks readiness', () => {
     const State = loadState();
+    State.setSmtpMode('auth');
     State.smtpHost = 'smtp.gmail.com';
     State.smtpUser = 'kitchen@school.org';
     State.smtpPassword = '';
@@ -98,15 +93,49 @@ test('authenticated mode: missing password blocks readiness', () => {
 test('no host blocks readiness in both modes', () => {
     const State = loadState();
     State.smtpHost = '';
-    State.smtpUser = '';
-    State.smtpPassword = '';
     State.smtpFrom = 'lunchmenu@school.org';
     assert.equal(State.smtpReady(), false);
 
+    State.setSmtpMode('auth');
     State.smtpUser = 'kitchen@school.org';
     State.smtpPassword = 'app-password';
     State.smtpFrom = '';
     assert.equal(State.smtpReady(), false);
+});
+
+test('setSmtpMode relay clears credentials; auth keeps fields', () => {
+    const State = loadState();
+    State.smtpUser = 'kitchen@school.org';
+    State.smtpPassword = 'app-pass';
+    State.setSmtpMode('relay');
+    assert.equal(State.smtpMode, 'relay');
+    assert.equal(State.smtpUser, '');
+    assert.equal(State.smtpPassword, '');
+
+    State.setSmtpMode('auth');
+    assert.equal(State.smtpMode, 'auth');
+    // switching back does not fabricate credentials
+    assert.equal(State.smtpUser, '');
+    assert.equal(State.smtpPassword, '');
+});
+
+test('setSmtpMode ignores invalid values', () => {
+    const State = loadState();
+    State.setSmtpMode('nonsense');
+    assert.ok(['relay', 'auth'].includes(State.smtpMode));
+});
+
+test('legacy installs default to auth mode when credentials exist', () => {
+    const State = loadState({
+        lunchMenu_smtpUser: 'kitchen@school.org',
+        lunchMenu_smtpPassword: 'secret'
+    });
+    assert.equal(State.smtpMode, 'auth');
+});
+
+test('existing saved mode survives reload', () => {
+    const State = loadState({ lunchMenu_smtpMode: 'relay' });
+    assert.equal(State.smtpMode, 'relay');
 });
 
 test('smtpFrom round-trips through saveSmtpFrom + localStorage', () => {

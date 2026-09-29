@@ -1,6 +1,6 @@
 {
   "name": "Lunch-Menu-Publisher",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Monthly Lunch Menu Publisher for Schools",
   "scripts": {
     "tauri": "tauri",
