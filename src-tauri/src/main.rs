@@ -22,6 +22,27 @@ fn resolve_smtp(
 ) -> Result<(String, u16, String, String), String> {
     dotenv().ok();
 
+    let host = match smtp_host {
+        Some(h) if !h.trim().is_empty() => h,
+        _ => std::env::var("SMTP_HOST").map_err(|_| "SMTP_HOST not set in .env")?,
+    };
+    let port = match smtp_port {
+        Some(p) if p > 0 => p,
+        _ => std::env::var("SMTP_PORT")
+            .ok()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(465),
+    };
+
+    // Relay mode: leave BOTH user and password blank to send without
+    // authentication (internal relay / Google Workspace SMTP relay).
+    let user_blank = smtp_user.as_deref().map_or(true, |u| u.trim().is_empty());
+    let pass_blank = smtp_password.as_deref().map_or(true, |p| p.trim().is_empty());
+    if user_blank && pass_blank {
+        return Ok((host, port, String::new(), String::new()));
+    }
+
+    // Otherwise fall back to .env for whichever field is missing.
     let email_user = match smtp_user {
         Some(u) if !u.trim().is_empty() => u,
         _ => std::env::var("EMAIL_USER").map_err(|_| "EMAIL_USER not set in .env".to_string())?,
@@ -30,19 +51,8 @@ fn resolve_smtp(
         Some(p) if !p.trim().is_empty() => p,
         _ => std::env::var("EMAIL_PASSWORD").map_err(|_| "EMAIL_PASSWORD not set in .env")?,
     };
-    let smtp_host = match smtp_host {
-        Some(h) if !h.trim().is_empty() => h,
-        _ => std::env::var("SMTP_HOST").map_err(|_| "SMTP_HOST not set in .env")?,
-    };
-    let smtp_port = match smtp_port {
-        Some(p) if p > 0 => p,
-        _ => std::env::var("SMTP_PORT")
-            .ok()
-            .and_then(|v| v.parse().ok())
-            .unwrap_or(465),
-    };
 
-    Ok((smtp_host, smtp_port, email_user, email_password))
+    Ok((host, port, email_user, email_password))
 }
 
 fn build_mailer_from(
@@ -51,21 +61,27 @@ fn build_mailer_from(
     user: String,
     password: String,
 ) -> Result<SmtpTransport, String> {
-    let creds = Credentials::new(user, password);
+    let relay_mode = user.trim().is_empty() && password.trim().is_empty();
     let tls_params = TlsParameters::builder(host.to_owned())
         .build()
         .map_err(|e| format!("Failed to build TLS parameters: {e}"))?;
     let tls_mode = if port == 465 {
         Tls::Wrapper(tls_params)
+    } else if relay_mode && port == 25 {
+        // Plain SMTP relays on port 25 usually speak no TLS at all.
+        Tls::None
     } else {
         Tls::Required(tls_params)
     };
 
-    Ok(SmtpTransport::builder_dangerous(host)
-        .port(port)
-        .credentials(creds)
-        .tls(tls_mode)
-        .build())
+    let builder = SmtpTransport::builder_dangerous(host).port(port);
+    let builder = if relay_mode {
+        builder
+    } else {
+        builder.credentials(Credentials::new(user, password))
+    };
+
+    Ok(builder.tls(tls_mode).build())
 }
 
 fn build_mailer(
@@ -73,11 +89,40 @@ fn build_mailer(
     smtp_port: Option<u16>,
     smtp_user: Option<String>,
     smtp_password: Option<String>,
+    smtp_from: Option<String>,
 ) -> Result<(SmtpTransport, String), String> {
     let (host, port, user, password) =
         resolve_smtp(smtp_host, smtp_port, smtp_user, smtp_password)?;
-    let mailer = build_mailer_from(host.as_str(), port, user.clone(), password)?;
-    Ok((mailer, user))
+    // From address: explicit setting wins; otherwise the authenticated
+    // username. Relay mode has no username, so the explicit field is required.
+    let from = match smtp_from {
+        Some(f) if !f.trim().is_empty() => f,
+        _ if !user.is_empty() => user.clone(),
+        _ => {
+            return Err(
+                "Relay mode needs a From address (Settings → From Address)."
+                    .to_string(),
+            )
+        }
+    };
+    let mailer = build_mailer_from(host.as_str(), port, user, password)?;
+    Ok((mailer, from))
+}
+
+/// Append plain-language guidance for common SMTP replies so a raw lettre
+/// dump becomes an actionable message.
+fn friendly_smtp_error(msg: String) -> String {
+    if msg.contains("4.7.0") {
+        return format!(
+            "{msg} - Google is temporarily throttling connections from this network. Wait 15-30 minutes and try again."
+        );
+    }
+    if msg.contains("5.7.0") && msg.contains("Authentication Required") {
+        return format!(
+            "{msg} - This server requires a login. For no-auth sending, use your relay host (e.g. smtp-relay.gmail.com); otherwise fill in the Email User and Password fields."
+        );
+    }
+    msg
 }
 
 #[tauri::command]
@@ -87,14 +132,19 @@ async fn test_smtp_connection(
     user: String,
     password: String,
 ) -> Result<String, String> {
+    let relay = user.trim().is_empty() && password.trim().is_empty();
     let mailer = build_mailer_from(host.as_str(), port, user, password)?;
     let connected = mailer
         .test_connection()
-        .map_err(|e| format!("SMTP connection test failed: {e:?}"))?;
+        .map_err(|e| friendly_smtp_error(format!("SMTP connection test failed: {e:?}")))?;
     if !connected {
         return Err("SMTP server did not accept the test connection.".to_string());
     }
-    Ok("SMTP connection successful!".to_string())
+    if relay {
+        Ok("SMTP connection successful (relay mode, no authentication)!".to_string())
+    } else {
+        Ok("SMTP connection successful!".to_string())
+    }
 }
 
 /// Send the Publish Month email: a short body, the menu.txt attachment, and
@@ -117,8 +167,10 @@ async fn send_publish_email(
     smtp_port: Option<u16>,
     smtp_user: Option<String>,
     smtp_password: Option<String>,
+    smtp_from: Option<String>,
 ) -> Result<String, String> {
-    let (mailer, email_user) = build_mailer(smtp_host, smtp_port, smtp_user, smtp_password)?;
+    let (mailer, email_user) =
+        build_mailer(smtp_host, smtp_port, smtp_user, smtp_password, smtp_from)?;
     let mut multipart = MultiPart::mixed().singlepart(SinglePart::plain(body));
 
     let txt_attachment = Attachment::new(txt_attachment_name).body(
@@ -148,7 +200,7 @@ async fn send_publish_email(
         .from(
             email_user
                 .parse()
-                .map_err(|e| format!("Failed to parse from address: {e}"))?,
+                .map_err(|e| format!("Invalid From address: {e}"))?,
         )
         .to(recipient
             .parse()
@@ -160,7 +212,7 @@ async fn send_publish_email(
     mailer
         .send(&email)
         .map(|_| "Email sent successfully!".to_string())
-        .map_err(|e| format!("Could not send email: {e:?}"))
+        .map_err(|e| friendly_smtp_error(format!("Could not send email: {e:?}")))
 }
 
 fn temp_suffix() -> String {

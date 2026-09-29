@@ -82,9 +82,7 @@ const Publish = (function () {
     // ------------------------------------------------------------------
 
     function buildConfig() {
-        const smtpComplete = !!(
-            State.smtpHost && State.smtpUser && State.smtpPassword
-        );
+        const smtpComplete = !!State.smtpReady();
 
         // menu.json always covers the REAL current month + the following month,
         // regardless of which month the user is publishing. Anchoring to the
@@ -343,7 +341,8 @@ const Publish = (function () {
                     smtp_host: State.smtpHost || null,
                     smtp_port: State.smtpPort || null,
                     smtp_user: State.smtpUser || null,
-                    smtp_password: State.smtpPassword || null
+                    smtp_password: State.smtpPassword || null,
+                    smtp_from: State.smtpFrom || null
                 });
                 record('email', 'Staff-office email', true,
                     `Sent to ${State.staffEmail} (TXT attached${pdfBase64 ? ' + PDF' : ''})`);
@@ -429,7 +428,8 @@ const Publish = (function () {
                 smtp_host: State.smtpHost || null,
                 smtp_port: State.smtpPort || null,
                 smtp_user: State.smtpUser || null,
-                smtp_password: State.smtpPassword || null
+                smtp_password: State.smtpPassword || null,
+                smtp_from: State.smtpFrom || null
             });
             alert('Test email sent successfully!');
             return true;

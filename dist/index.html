@@ -161,19 +161,30 @@
                         <input type="text" id="smtpHostInput" placeholder="smtp.example.com">
                     </div>
                     <div class="setting-item">
+                        <label>SMTP Mode:</label>
+                        <label class="smtp-mode-choice"><input type="radio" name="smtpMode" id="smtpModeRelay" value="relay"> Mail relay — no sign-in</label>
+                        <label class="smtp-mode-choice"><input type="radio" name="smtpMode" id="smtpModeAuth" value="auth"> Username &amp; password</label>
+                    </div>
+                    <div class="setting-item">
                         <label for="smtpPortInput">SMTP Port:</label>
                         <input type="number" id="smtpPortInput" placeholder="587" min="1" max="65535">
                     </div>
-                    <div class="setting-item">
+                    <div class="setting-item" id="smtpUserRow">
                         <label for="smtpUserInput">Email User:</label>
                         <input type="email" id="smtpUserInput" placeholder="your-email@example.com">
                     </div>
-                    <div class="setting-item">
+                    <div class="setting-item" id="smtpPasswordRow">
                         <label for="smtpPasswordInput">Email Password:</label>
                         <input type="password" id="smtpPasswordInput" placeholder="password" autocomplete="new-password" autocapitalize="off" autocorrect="off" spellcheck="false">
                         <small class="setting-hint">Stored locally on this device. Use an app-specific password, not your main account password.</small>
                     </div>
                     <div class="setting-item">
+                        <label for="smtpFromInput">From Address:</label>
+                        <input type="email" id="smtpFromInput" placeholder="lunchmenu@yourschool.org">
+                        <small class="setting-hint">Shown as the sender. Required for relay mode; otherwise defaults to the email user.</small>
+                    </div>
+                    <div class="setting-item">
+                        <button id="saveSettingsBtn" class="btn btn-primary">Save Settings</button>
                         <button id="testConnectionBtn" class="btn btn-secondary">Test Connection</button>
                         <button id="sendTestEmailBtn" class="btn btn-secondary">Send Test Email</button>
                     </div>

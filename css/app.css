@@ -1593,3 +1593,16 @@ body.preview-mode .day-entree-placeholder {
         transition-duration: 0.01ms !important;
     }
 }
+
+/* SMTP mode radio choices (relay vs username & password) */
+.smtp-mode-choice {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: normal;
+    margin: 0.25rem 0;
+    cursor: pointer;
+}
+.smtp-mode-choice input[type="radio"] {
+    width: auto;
+}

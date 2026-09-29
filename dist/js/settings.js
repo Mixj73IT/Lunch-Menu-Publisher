@@ -119,27 +119,108 @@ const Settings = {
             this.updateStatuses();
         });
 
+        const smtpFrom = $('smtpFromInput');
+        if (smtpFrom) smtpFrom.addEventListener('change', (e) => {
+            const prev = State.smtpFrom;
+            State.smtpFrom = e.target.value.trim();
+            State.saveSmtpFrom(prev);
+            State.showSaved();
+            this.updateStatuses();
+        });
+
+        // Mode radios: hide/show credential rows entirely.
+        const modeRelay = $('smtpModeRelay');
+        const modeAuth = $('smtpModeAuth');
+        const onModeChange = (e) => {
+            if (!e.target.checked) return;
+            State.setSmtpMode(e.target.value);
+            this.updateSmtpModeVisibility();
+            this.updateStatuses();
+            State.showSaved();
+        };
+        if (modeRelay) modeRelay.addEventListener('change', onModeChange);
+        if (modeAuth) modeAuth.addEventListener('change', onModeChange);
+
+        /** Show/hide the user+password rows based on the chosen mode. */
+        Settings.updateSmtpModeVisibility = function () {
+            const relay = State.smtpIsRelayMode();
+            const userRow = document.getElementById('smtpUserRow');
+            const passRow = document.getElementById('smtpPasswordRow');
+            if (userRow) userRow.style.display = relay ? 'none' : '';
+            if (passRow) passRow.style.display = relay ? 'none' : '';
+        };
+
+        /**
+         * Sync every SMTP field from the live inputs into State + storage.
+         * 'change' only fires on blur, so a just-typed value would otherwise
+         * never be persisted — the test/publish would silently use the OLD
+         * host. This is what made the corrected relay host appear to "not
+         * save".
+         */
+        const syncSmtpFieldsFromInputs = () => {
+            if (smtpHost) {
+                const prevHost = State.smtpHost;
+                State.smtpHost = smtpHost.value.trim();
+                if (State.smtpHost !== prevHost) State.saveSmtpHost(prevHost);
+            }
+            if (smtpPort) {
+                const prevPort = State.smtpPort;
+                const parsed = parseInt(smtpPort.value, 10);
+                State.smtpPort = Number.isFinite(parsed) && parsed > 0 ? parsed : 587;
+                if (State.smtpPort !== prevPort) State.saveSmtpPort(prevPort);
+            }
+            if (State.smtpIsRelayMode()) {
+                // Relay mode: credentials are not just hidden but empty.
+                State.smtpUser = '';
+                State.smtpPassword = '';
+                State.saveSmtpUser();
+                State.saveSmtpPassword();
+            } else {
+                if (smtpUser) {
+                    const prevUser = State.smtpUser;
+                    State.smtpUser = smtpUser.value.trim();
+                    if (State.smtpUser !== prevUser) State.saveSmtpUser(prevUser);
+                }
+                if (smtpPassword) {
+                    const prevPass = State.smtpPassword;
+                    State.smtpPassword = smtpPassword.value;
+                    if (State.smtpPassword !== prevPass) State.saveSmtpPassword(prevPass);
+                }
+            }
+            if (smtpFrom) {
+                const prevFrom = State.smtpFrom;
+                State.smtpFrom = smtpFrom.value.trim();
+                if (State.smtpFrom !== prevFrom) State.saveSmtpFrom(prevFrom);
+            }
+            if (staffInput) {
+                const prevStaff = State.staffEmail;
+                State.staffEmail = staffInput.value.trim();
+                if (State.staffEmail !== prevStaff) State.saveStaffEmail();
+            }
+            this.updateStatuses();
+        };
+
+        const saveSettingsBtn = $('saveSettingsBtn');
+        if (saveSettingsBtn) saveSettingsBtn.addEventListener('click', () => {
+            syncSmtpFieldsFromInputs();
+            State.showSaved();
+        });
+
         const testConnectionBtn = $('testConnectionBtn');
         if (testConnectionBtn) testConnectionBtn.addEventListener('click', async () => {
-            // Read the live input values: the 'change' event only fires on blur,
-            // so a just-typed value may not be persisted to State yet.
-            const host = smtpHost ? smtpHost.value : State.smtpHost;
-            const rawPort = smtpPort ? parseInt(smtpPort.value, 10) : NaN;
-            const port = Number.isFinite(rawPort) && rawPort > 0 ? rawPort : State.smtpPort;
-            const user = smtpUser ? smtpUser.value : State.smtpUser;
-            const password = smtpPassword ? smtpPassword.value : State.smtpPassword;
-            await State.testSmtpConnection(host, port, user, password);
+            // Persist live input values first, then test exactly what was saved.
+            syncSmtpFieldsFromInputs();
+            await State.testSmtpConnection(
+                State.smtpHost, State.smtpPort, State.smtpUser, State.smtpPassword, State.smtpFrom
+            );
         });
 
         const sendTestEmailBtn = $('sendTestEmailBtn');
         if (sendTestEmailBtn) {
             sendTestEmailBtn.addEventListener('click', async () => {
-                // Persist unsaved input values before sending.
-                if (staffInput && staffInput.value !== State.staffEmail) {
-                    State.staffEmail = staffInput.value.trim();
-                    State.saveStaffEmail();
-                    this.updateStatuses();
-                }
+                // Persist unsaved input values before sending — all of them,
+                // not just the recipient.
+                syncSmtpFieldsFromInputs();
                 await Publish.sendTestEmail();
             });
         }
@@ -175,15 +256,31 @@ const Settings = {
             } else {
                 parts.push('No staff-office recipient set');
             }
-            if (State.smtpHost && State.smtpUser && State.smtpPassword) {
-                parts.push('SMTP configured');
+            if (State.smtpHost && State.smtpReady()) {
+                const mode = State.smtpIsRelayMode()
+                    ? `Mail relay — no sign-in (from ${State.smtpFrom})`
+                    : 'Username & password';
+                parts.push(mode);
                 emailStatus.className = 'setting-status ok';
                 emailStatus.textContent = `✓ ${parts.join(' · ')}`;
             } else {
                 const missing = [];
                 if (!State.smtpHost) missing.push('host');
-                if (!State.smtpUser) missing.push('user');
-                if (!State.smtpPassword) missing.push('password');
+                if (State.smtpIsRelayMode()) {
+                    if (!State.smtpFrom) missing.push('from address');
+                    // Classic trap: Gmail's authenticated endpoint with no
+                    // credentials always fails with 5.7.0 Authentication
+                    // Required. The relay lives at smtp-relay.gmail.com.
+                    if (/^smtp\.(gmail|google)\.com$/i.test(State.smtpHost)) {
+                        missing.push('relay host (Gmail needs a login; your no-auth relay is smtp-relay.gmail.com)');
+                    }
+                } else {
+                    if (!State.smtpUser) missing.push('user');
+                    if (!State.smtpPassword) missing.push('password');
+                    if (State.smtpHost && !missing.length && !State.smtpFrom) {
+                        missing.push('from address (recommended)');
+                    }
+                }
                 parts.push(`SMTP incomplete (missing ${missing.join(', ')})`);
                 emailStatus.className = 'setting-status warn';
                 emailStatus.textContent = `! ${parts.join(' · ')}`;
@@ -228,7 +325,14 @@ const Settings = {
         if (smtpUser) smtpUser.value = State.smtpUser;
         const smtpPassword = $('smtpPasswordInput');
         if (smtpPassword) smtpPassword.value = State.smtpPassword;
+        const smtpFrom = $('smtpFromInput');
+        if (smtpFrom) smtpFrom.value = State.smtpFrom;
+        const modeRelay = $('smtpModeRelay');
+        if (modeRelay) modeRelay.checked = State.smtpIsRelayMode();
+        const modeAuth = $('smtpModeAuth');
+        if (modeAuth) modeAuth.checked = !State.smtpIsRelayMode();
 
+        this.updateSmtpModeVisibility();
         this.updateStatuses();
 
         // Focus trap setup
