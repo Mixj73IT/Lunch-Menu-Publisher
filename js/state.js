@@ -439,7 +439,9 @@ const State = {
             alert('SMTP connection successful!');
         } catch (error) {
             console.error('SMTP connection test failed:', error);
-            this.showError('SMTP test failed. Check your host, port, user, and password, then try again.');
+            // Surface the real error: "check your settings" alone hides
+            // whether it was DNS, a timeout, or an auth rejection.
+            this.showError('SMTP test failed: ' + error);
         } finally {
             this.hideLoading();
         }

@@ -197,6 +197,12 @@ const Settings = {
                 if (!State.smtpHost) missing.push('host');
                 if (State.smtpIsRelayMode()) {
                     if (!State.smtpFrom) missing.push('from address');
+                    // Classic trap: Gmail's authenticated endpoint with no
+                    // credentials always fails with 5.7.0 Authentication
+                    // Required. The relay lives at smtp-relay.gmail.com.
+                    if (/^smtp\.(gmail|google)\.com$/i.test(State.smtpHost)) {
+                        missing.push('relay host (Gmail needs a login; your no-auth relay is smtp-relay.gmail.com)');
+                    }
                 } else {
                     if (!State.smtpUser) missing.push('user');
                     if (!State.smtpPassword) missing.push('password');
