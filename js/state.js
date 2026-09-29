@@ -25,6 +25,7 @@ const StorageKeys = {
     SMTP_PORT: 'lunchMenu_smtpPort',
     SMTP_USER: 'lunchMenu_smtpUser',
     SMTP_PASSWORD: 'lunchMenu_smtpPassword',
+    SMTP_FROM: 'lunchMenu_smtpFrom',
     MENU_JSON_FOLDER: 'lunchMenu_menuJsonFolder',
     LAST_PUBLISHED: 'lunchMenu_lastPublished',
     // Legacy keys, kept only for one-time migration to STAFF_EMAIL.
@@ -129,6 +130,7 @@ const State = {
         this.smtpPort = (typeof savedPort === 'number' && savedPort > 0) ? savedPort : 587;
         this.smtpUser = this.load(StorageKeys.SMTP_USER) || '';
         this.smtpPassword = this.load(StorageKeys.SMTP_PASSWORD) || '';
+        this.smtpFrom = this.load(StorageKeys.SMTP_FROM) || '';
         this.menuJsonFolder = this.load(StorageKeys.MENU_JSON_FOLDER) || '';
         this.lastPublished = this.load(StorageKeys.LAST_PUBLISHED) || {};
 
@@ -376,20 +378,47 @@ const State = {
         }
     },
 
+    saveSmtpFrom(prev) {
+        if (!this.save(StorageKeys.SMTP_FROM, this.smtpFrom) && prev !== undefined) {
+            this.smtpFrom = prev;
+        }
+    },
+
+    /** Relay mode is live: both credentials blank -> unauthenticated send. */
+    smtpIsRelayMode() {
+        return !this.smtpUser && !this.smtpPassword;
+    },
+
+    /**
+     * True when SMTP settings are complete enough to send:
+     * - relay mode: host + from set, user and password blank
+     * - authenticated mode: host + user + password set (from falls back to user)
+     */
+    smtpReady() {
+        if (!this.smtpHost) return false;
+        if (this.smtpIsRelayMode()) return !!this.smtpFrom;
+        return !!(this.smtpUser && this.smtpPassword);
+    },
+
     /**
      * Test the SMTP connection.
      * In the Tauri desktop app this asks the Rust backend to open a real
      * connection to the mail server. In the browser it cannot work (no SMTP
      * client exists there), so we tell the user instead of pretending.
      */
-    async testSmtpConnection(host, port, user, password) {
+    async testSmtpConnection(host, port, user, password, from) {
         const h = (host !== undefined ? host : this.smtpHost) || '';
         const p = (port !== undefined ? port : this.smtpPort) || 587;
         const u = (user !== undefined ? user : this.smtpUser) || '';
         const pw = (password !== undefined ? password : this.smtpPassword) || '';
+        const relayMode = !u && !pw;
 
-        if (!h || !u || !pw) {
-            this.showError('Missing SMTP credentials. Please fill in host, user, and password.');
+        if (!h || (!relayMode && (!u || !pw)) || (relayMode && !this.smtpFrom)) {
+            if (relayMode && !this.smtpFrom) {
+                this.showError('Relay mode needs a From Address (Settings). Fill it in or enter SMTP user and password.');
+            } else {
+                this.showError('Missing SMTP settings. Please fill in the host' + (relayMode ? '' : ', user, and password') + '.');
+            }
             return;
         }
 
@@ -431,7 +460,8 @@ const State = {
             menuJsonFolder: this.menuJsonFolder,
             smtpHost: this.smtpHost,
             smtpPort: this.smtpPort,
-            smtpUser: this.smtpUser
+            smtpUser: this.smtpUser,
+            smtpFrom: this.smtpFrom
             // NOTE: the SMTP password is intentionally NOT exported in backups.
         };
         const json = JSON.stringify(data, null, 2);
@@ -527,6 +557,11 @@ const State = {
                     const prev = this.smtpUser;
                     this.smtpUser = data.smtpUser;
                     this.saveSmtpUser(prev);
+                }
+                if (typeof data.smtpFrom === 'string') {
+                    const prev = this.smtpFrom;
+                    this.smtpFrom = data.smtpFrom;
+                    this.saveSmtpFrom(prev);
                 }
                 alert('Data imported successfully! The page will now reload.');
                 location.reload();

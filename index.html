@@ -171,7 +171,12 @@
                     <div class="setting-item">
                         <label for="smtpPasswordInput">Email Password:</label>
                         <input type="password" id="smtpPasswordInput" placeholder="password" autocomplete="new-password" autocapitalize="off" autocorrect="off" spellcheck="false">
-                        <small class="setting-hint">Stored locally on this device. Use an app-specific password, not your main account password.</small>
+                        <small class="setting-hint">Stored locally on this device. Use an app-specific password, not your main account password. Leave BOTH user and password blank to send through a mail relay without signing in.</small>
+                    </div>
+                    <div class="setting-item">
+                        <label for="smtpFromInput">From Address:</label>
+                        <input type="email" id="smtpFromInput" placeholder="lunchmenu@yourschool.org">
+                        <small class="setting-hint">Shown as the sender. Required for relay mode; otherwise defaults to the email user.</small>
                     </div>
                     <div class="setting-item">
                         <button id="testConnectionBtn" class="btn btn-secondary">Test Connection</button>

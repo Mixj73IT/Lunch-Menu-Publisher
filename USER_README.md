@@ -38,6 +38,10 @@ printed design first.
    **User**, and **Password** for the account that sends the email.
    Use an app-specific password from your email provider, not your main
    password. Credentials are stored only on this device.
+   **Relay mode (no sign-in):** if your school provides a mail relay
+   (for example Google Workspace's `smtp-relay.gmail.com`), leave **User**
+   and **Password** blank and set **From Address** instead — the app will
+   send without credentials.
 4. Click **Test Connection** to verify the server accepts your credentials.
 5. Click **Send Test Email** to confirm an email actually arrives.
 

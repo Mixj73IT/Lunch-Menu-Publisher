@@ -119,6 +119,15 @@ const Settings = {
             this.updateStatuses();
         });
 
+        const smtpFrom = $('smtpFromInput');
+        if (smtpFrom) smtpFrom.addEventListener('change', (e) => {
+            const prev = State.smtpFrom;
+            State.smtpFrom = e.target.value.trim();
+            State.saveSmtpFrom(prev);
+            State.showSaved();
+            this.updateStatuses();
+        });
+
         const testConnectionBtn = $('testConnectionBtn');
         if (testConnectionBtn) testConnectionBtn.addEventListener('click', async () => {
             // Read the live input values: the 'change' event only fires on blur,
@@ -128,7 +137,8 @@ const Settings = {
             const port = Number.isFinite(rawPort) && rawPort > 0 ? rawPort : State.smtpPort;
             const user = smtpUser ? smtpUser.value : State.smtpUser;
             const password = smtpPassword ? smtpPassword.value : State.smtpPassword;
-            await State.testSmtpConnection(host, port, user, password);
+            const from = smtpFrom ? smtpFrom.value : State.smtpFrom;
+            await State.testSmtpConnection(host, port, user, password, from);
         });
 
         const sendTestEmailBtn = $('sendTestEmailBtn');
@@ -175,15 +185,25 @@ const Settings = {
             } else {
                 parts.push('No staff-office recipient set');
             }
-            if (State.smtpHost && State.smtpUser && State.smtpPassword) {
-                parts.push('SMTP configured');
+            if (State.smtpHost && State.smtpReady()) {
+                const mode = State.smtpIsRelayMode()
+                    ? `SMTP relay (no auth, from ${State.smtpFrom})`
+                    : 'SMTP configured';
+                parts.push(mode);
                 emailStatus.className = 'setting-status ok';
                 emailStatus.textContent = `✓ ${parts.join(' · ')}`;
             } else {
                 const missing = [];
                 if (!State.smtpHost) missing.push('host');
-                if (!State.smtpUser) missing.push('user');
-                if (!State.smtpPassword) missing.push('password');
+                if (State.smtpIsRelayMode()) {
+                    if (!State.smtpFrom) missing.push('from address');
+                } else {
+                    if (!State.smtpUser) missing.push('user');
+                    if (!State.smtpPassword) missing.push('password');
+                    if (State.smtpHost && !missing.length && !State.smtpFrom) {
+                        missing.push('from address (recommended)');
+                    }
+                }
                 parts.push(`SMTP incomplete (missing ${missing.join(', ')})`);
                 emailStatus.className = 'setting-status warn';
                 emailStatus.textContent = `! ${parts.join(' · ')}`;
@@ -228,6 +248,8 @@ const Settings = {
         if (smtpUser) smtpUser.value = State.smtpUser;
         const smtpPassword = $('smtpPasswordInput');
         if (smtpPassword) smtpPassword.value = State.smtpPassword;
+        const smtpFrom = $('smtpFromInput');
+        if (smtpFrom) smtpFrom.value = State.smtpFrom;
 
         this.updateStatuses();
 
