@@ -109,6 +109,22 @@ fn build_mailer(
     Ok((mailer, from))
 }
 
+/// Append plain-language guidance for common SMTP replies so a raw lettre
+/// dump becomes an actionable message.
+fn friendly_smtp_error(msg: String) -> String {
+    if msg.contains("4.7.0") {
+        return format!(
+            "{msg} - Google is temporarily throttling connections from this network. Wait 15-30 minutes and try again."
+        );
+    }
+    if msg.contains("5.7.0") && msg.contains("Authentication Required") {
+        return format!(
+            "{msg} - This server requires a login. For no-auth sending, use your relay host (e.g. smtp-relay.gmail.com); otherwise fill in the Email User and Password fields."
+        );
+    }
+    msg
+}
+
 #[tauri::command]
 async fn test_smtp_connection(
     host: String,
@@ -119,7 +135,7 @@ async fn test_smtp_connection(
     let mailer = build_mailer_from(host.as_str(), port, user, password)?;
     let connected = mailer
         .test_connection()
-        .map_err(|e| format!("SMTP connection test failed: {e:?}"))?;
+        .map_err(|e| friendly_smtp_error(format!("SMTP connection test failed: {e:?}")))?;
     if !connected {
         return Err("SMTP server did not accept the test connection.".to_string());
     }
@@ -191,7 +207,7 @@ async fn send_publish_email(
     mailer
         .send(&email)
         .map(|_| "Email sent successfully!".to_string())
-        .map_err(|e| format!("Could not send email: {e:?}"))
+        .map_err(|e| friendly_smtp_error(format!("Could not send email: {e:?}")))
 }
 
 fn temp_suffix() -> String {
