@@ -128,28 +128,63 @@ const Settings = {
             this.updateStatuses();
         });
 
+        /**
+         * Sync every SMTP field from the live inputs into State + storage.
+         * 'change' only fires on blur, so a just-typed value would otherwise
+         * never be persisted — the test/publish would silently use the OLD
+         * host. This is what made the corrected relay host appear to "not
+         * save".
+         */
+        const syncSmtpFieldsFromInputs = () => {
+            if (smtpHost) {
+                const prevHost = State.smtpHost;
+                State.smtpHost = smtpHost.value.trim();
+                if (State.smtpHost !== prevHost) State.saveSmtpHost(prevHost);
+            }
+            if (smtpPort) {
+                const prevPort = State.smtpPort;
+                const parsed = parseInt(smtpPort.value, 10);
+                State.smtpPort = Number.isFinite(parsed) && parsed > 0 ? parsed : 587;
+                if (State.smtpPort !== prevPort) State.saveSmtpPort(prevPort);
+            }
+            if (smtpUser) {
+                const prevUser = State.smtpUser;
+                State.smtpUser = smtpUser.value.trim();
+                if (State.smtpUser !== prevUser) State.saveSmtpUser(prevUser);
+            }
+            if (smtpPassword) {
+                const prevPass = State.smtpPassword;
+                State.smtpPassword = smtpPassword.value;
+                if (State.smtpPassword !== prevPass) State.saveSmtpPassword(prevPass);
+            }
+            if (smtpFrom) {
+                const prevFrom = State.smtpFrom;
+                State.smtpFrom = smtpFrom.value.trim();
+                if (State.smtpFrom !== prevFrom) State.saveSmtpFrom(prevFrom);
+            }
+            if (staffInput) {
+                const prevStaff = State.staffEmail;
+                State.staffEmail = staffInput.value.trim();
+                if (State.staffEmail !== prevStaff) State.saveStaffEmail();
+            }
+            this.updateStatuses();
+        };
+
         const testConnectionBtn = $('testConnectionBtn');
         if (testConnectionBtn) testConnectionBtn.addEventListener('click', async () => {
-            // Read the live input values: the 'change' event only fires on blur,
-            // so a just-typed value may not be persisted to State yet.
-            const host = smtpHost ? smtpHost.value : State.smtpHost;
-            const rawPort = smtpPort ? parseInt(smtpPort.value, 10) : NaN;
-            const port = Number.isFinite(rawPort) && rawPort > 0 ? rawPort : State.smtpPort;
-            const user = smtpUser ? smtpUser.value : State.smtpUser;
-            const password = smtpPassword ? smtpPassword.value : State.smtpPassword;
-            const from = smtpFrom ? smtpFrom.value : State.smtpFrom;
-            await State.testSmtpConnection(host, port, user, password, from);
+            // Persist live input values first, then test exactly what was saved.
+            syncSmtpFieldsFromInputs();
+            await State.testSmtpConnection(
+                State.smtpHost, State.smtpPort, State.smtpUser, State.smtpPassword, State.smtpFrom
+            );
         });
 
         const sendTestEmailBtn = $('sendTestEmailBtn');
         if (sendTestEmailBtn) {
             sendTestEmailBtn.addEventListener('click', async () => {
-                // Persist unsaved input values before sending.
-                if (staffInput && staffInput.value !== State.staffEmail) {
-                    State.staffEmail = staffInput.value.trim();
-                    State.saveStaffEmail();
-                    this.updateStatuses();
-                }
+                // Persist unsaved input values before sending — all of them,
+                // not just the recipient.
+                syncSmtpFieldsFromInputs();
                 await Publish.sendTestEmail();
             });
         }
